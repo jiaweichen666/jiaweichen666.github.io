@@ -71,6 +71,122 @@
       <div class="outer">
         <section id="main">
   
+    <article id="post-How-to-debug-daos-engine-via-vscode-md" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="/2021/12/30/How-to-debug-daos-engine-via-vscode-md/" class="article-date">
+  <time class="dt-published" datetime="2021-12-30T05:40:26.000Z" itemprop="datePublished">2021-12-30</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="p-name article-title" href="/2021/12/30/How-to-debug-daos-engine-via-vscode-md/">How_to_debug_daos_engine_via_vscode.md</a>
+    </h1>
+  
+
+      </header>
+    
+    <div class="e-content article-entry" itemprop="articleBody">
+      
+        <p>[TOC]</p>
+<h1 id="背景："><a href="#背景：" class="headerlink" title="背景："></a>背景：</h1><p>daos代码干读的话不是很好理解，如果能单步跟踪，那么对于理解daos的控制流程和数据读写是比较有利的。</p>
+<h1 id="工具"><a href="#工具" class="headerlink" title="工具"></a>工具</h1><ul>
+<li>vscode</li>
+<li>一台虚拟机</li>
+</ul>
+<h1 id="操作步骤"><a href="#操作步骤" class="headerlink" title="操作步骤"></a>操作步骤</h1><h2 id="在虚拟机中编译daos-code"><a href="#在虚拟机中编译daos-code" class="headerlink" title="在虚拟机中编译daos code"></a>在虚拟机中编译daos code</h2><p>此步骤省略，参见官网的文档。</p>
+<h2 id="在虚拟机中启动Daos"><a href="#在虚拟机中启动Daos" class="headerlink" title="在虚拟机中启动Daos"></a>在虚拟机中启动Daos</h2><p>此步骤省略，参见官网文档：</p>
+<ol>
+<li>启动daos_server</li>
+<li>启动daos_engine</li>
+<li>启动daos_agent</li>
+</ol>
+<h2 id="配置local和remote的ssh免密连接"><a href="#配置local和remote的ssh免密连接" class="headerlink" title="配置local和remote的ssh免密连接"></a>配置local和remote的ssh免密连接</h2><ol>
+<li><p>ssh-copy-id <a href="mailto:&#114;&#111;&#111;&#x74;&#x40;&#x31;&#x37;&#x32;&#x2e;&#49;&#56;&#x2e;&#50;&#x30;&#x2e;&#49;&#49;">&#114;&#111;&#111;&#x74;&#x40;&#x31;&#x37;&#x32;&#x2e;&#49;&#56;&#x2e;&#50;&#x30;&#x2e;&#49;&#49;</a></p>
+<ul>
+<li>输入remote虚拟机root账户的密码</li>
+</ul>
+</li>
+<li><p>配置VSCode和虚拟机的连接：</p>
+<p>vscode支持三种模式的remote debug：</p>
+<ul>
+<li>Docker</li>
+<li>WSL</li>
+<li>SSH</li>
+</ul>
+<p>这里我们把Daos相关进程启动在了物理机（虚机）上，因此我们选择第三种SSH模式。</p>
+<ol>
+<li><p>点击VSCode边栏“远程资源管理”<img src="https://tva1.sinaimg.cn/large/008i3skNgy1gxvp3k38l6j301200x0kd.jpg" alt="image-20211230112046773"></p>
+</li>
+<li><p>点击加号<img src="https://tva1.sinaimg.cn/large/008i3skNgy1gxvp4g3s2ij307000pmwx.jpg" alt="image-20211230112516147"></p>
+</li>
+<li><p>在跳转出来的textbox中输入ssh的连接指令：</p>
+<p><code>ssh root@1123.1212.2121.121</code></p>
+</li>
+<li><p>配置成功</p>
+</li>
+</ol>
+</li>
+</ol>
+<h2 id="Attach-code-base目录："><a href="#Attach-code-base目录：" class="headerlink" title="Attach code base目录："></a>Attach code base目录：</h2><ol>
+<li>点击文件夹+<img src="https://tva1.sinaimg.cn/large/008i3skNgy1gxvp8s9vltj307801wgli.jpg" alt="image-20211230112927129"></li>
+<li>选择目标代码目录</li>
+</ol>
+<h2 id="安装remote-C-C-扩展"><a href="#安装remote-C-C-扩展" class="headerlink" title="安装remote C/C++扩展"></a>安装remote C/C++扩展</h2><p><img src="https://tva1.sinaimg.cn/large/008i3skNgy1gxvsihwmztj306v03hweh.jpg" alt="image-20211230132234853"></p>
+<h2 id="配置Debug-config"><a href="#配置Debug-config" class="headerlink" title="配置Debug config"></a>配置Debug config</h2><ol>
+<li><p>点击VScode边栏“运行和调试”</p>
+</li>
+<li><p>点击<img src="https://tva1.sinaimg.cn/large/008i3skNgy1gxvsjvwgmpj307000t0si.jpg" alt="image-20211230132355728"></p>
+</li>
+<li><p>添加配置<img src="https://tva1.sinaimg.cn/large/008i3skNgy1gxvskbljawj304301iq2q.jpg" alt="image-20211230132424770"></p>
+</li>
+<li><p>点击<img src="https://tva1.sinaimg.cn/large/008i3skNgy1gxvsl3mi8cj307600uq2q.jpg" alt="image-20211230132505233"></p>
+</li>
+<li><p>在<code>launch.json</code>中写入以下配置：</p>
+<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line">&#123;</span><br><span class="line">    <span class="attr">&quot;configurations&quot;</span>: [</span><br><span class="line">        &#123;</span><br><span class="line">            <span class="attr">&quot;name&quot;</span>: <span class="string">&quot;(gdb) 附加&quot;</span>,</span><br><span class="line">            <span class="attr">&quot;type&quot;</span>: <span class="string">&quot;cppdbg&quot;</span>,</span><br><span class="line">            <span class="attr">&quot;request&quot;</span>: <span class="string">&quot;attach&quot;</span>,</span><br><span class="line">            <span class="attr">&quot;program&quot;</span>: <span class="string">&quot;/home/kuhan/daos/install/bin/daos_engine&quot;</span>,</span><br><span class="line">            <span class="attr">&quot;processId&quot;</span>: <span class="string">&quot;$&#123;command:pickProcess&#125;&quot;</span>,</span><br><span class="line">            <span class="attr">&quot;MIMode&quot;</span>: <span class="string">&quot;gdb&quot;</span>,</span><br><span class="line">            <span class="attr">&quot;setupCommands&quot;</span>: [</span><br><span class="line">                &#123;</span><br><span class="line">                    <span class="attr">&quot;description&quot;</span>: <span class="string">&quot;为 gdb 启用整齐打印&quot;</span>,</span><br><span class="line">                    <span class="attr">&quot;text&quot;</span>: <span class="string">&quot;-enable-pretty-printing&quot;</span>,</span><br><span class="line">                    <span class="attr">&quot;ignoreFailures&quot;</span>: <span class="literal">true</span></span><br><span class="line">                &#125;</span><br><span class="line">            ]</span><br><span class="line">        &#125;</span><br><span class="line">        </span><br><span class="line"></span><br><span class="line">    ]</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></li>
+<li><p>按F5或者点击“开始调试”，debugger会尝试attach到daos_engine上。</p>
+</li>
+<li><p>在本地shell中<code>ssh root@123.123.123.123</code>登入到远程，查看daos相关进程<code>ps -ef | grep daos</code>:</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">root@kuhan-server:/home/kuhan/daos/src/tests# ps -efww |grep daos</span><br><span class="line">root       13401   10440  0 Dec29 pts/1    00:01:07 daos_server -o daos_server.yml start</span><br><span class="line">root       14457   13401 99 Dec29 pts/1    19:05:20 /home/kuhan/daos/install/bin/daos_engine -t 1 -x 0 -g daos_server -d /var/run/daos_server -T 2 -n /mnt/daos/daos_nvme.conf -I 0 -r 8192 -H 2 -s /mnt/daos</span><br><span class="line">root       14470   10440  0 Dec29 pts/1    00:00:02 daos_agent -i start</span><br><span class="line">root       31974   10440  0 03:12 pts/1    00:00:00 grep --color=auto daos</span><br></pre></td></tr></table></figure></li>
+<li><p>可知daos_engine的进程号为14457</p>
+</li>
+<li><p>在VScode中填入对应的进程号：</p>
+<p><img src="https://tva1.sinaimg.cn/large/008i3skNgy1gxvsuw29e6j30gw031aa6.jpg" alt="image-20211230133433545"></p>
+</li>
+<li><p>出现以下画面表示attach成功</p>
+<p><img src="https://tva1.sinaimg.cn/large/008i3skNgy1gxvsvvtzmfj306y06at8r.jpg" alt="image-20211230133530702"></p>
+</li>
+</ol>
+<h1 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h1><ol>
+<li><a target="_blank" rel="noopener" href="https://lightrun.com/debugging/how-to-debug-remotely-in-vs-code/">https://lightrun.com/debugging/how-to-debug-remotely-in-vs-code/</a></li>
+<li><a target="_blank" rel="noopener" href="https://code.visualstudio.com/docs/editor/debugging#_launch-configurations">https://code.visualstudio.com/docs/editor/debugging#_launch-configurations</a></li>
+<li><a target="_blank" rel="noopener" href="https://code.visualstudio.com/docs/editor/debugging">https://code.visualstudio.com/docs/editor/debugging</a></li>
+</ol>
+<h1 id="More"><a href="#More" class="headerlink" title="More"></a>More</h1><ol>
+<li>how to debug daos_server: TBD</li>
+<li>how to debug daos_agent: TBD</li>
+</ol>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://example.com/2021/12/30/How-to-debug-daos-engine-via-vscode-md/" data-id="ckxsjh49z0000ck8k0aod8eb3" data-title="How_to_debug_daos_engine_via_vscode.md" class="article-share-link">Share</a>
+      
+      
+      
+    </footer>
+  </div>
+  
+</article>
+
+
+
+  
     <article id="post-test-md" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
   <div class="article-meta">
     <a href="/2021/12/30/test-md/" class="article-date">
@@ -259,6 +375,10 @@
     <h3 class="widget-title">Recent Posts</h3>
     <div class="widget">
       <ul>
+        
+          <li>
+            <a href="/2021/12/30/How-to-debug-daos-engine-via-vscode-md/">How_to_debug_daos_engine_via_vscode.md</a>
+          </li>
         
           <li>
             <a href="/2021/12/30/test-md/">test.md</a>
