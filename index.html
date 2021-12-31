@@ -146,6 +146,167 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2021/12/31/DAOS-simple-obj-example/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Javie Chen">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Mars">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2021/12/31/DAOS-simple-obj-example/" class="post-title-link" itemprop="url">DAOS simple_obj example</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2021-12-31 15:28:23 / Modified: 15:29:06" itemprop="dateCreated datePublished" datetime="2021-12-31T15:28:23+08:00">2021-12-31</time>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="Daos-simple-Obj"><a href="#Daos-simple-Obj" class="headerlink" title="Daos simple Obj"></a>Daos simple Obj</h1><h2 id="Connect-Pool"><a href="#Connect-Pool" class="headerlink" title="Connect Pool"></a>Connect Pool</h2><h2 id="Create-Container"><a href="#Create-Container" class="headerlink" title="Create Container"></a>Create Container</h2><h2 id="Example-daos-key-array"><a href="#Example-daos-key-array" class="headerlink" title="Example_daos_key_array"></a>Example_daos_key_array</h2><ol>
+<li><p>daos_obj_generate_oid</p>
+<ol>
+<li>poh = dc_cont_hdl2pool_hdl(coh); // 获取cookie</li>
+<li>pool = dc_hdl2pool(poh); //获取pool<ol>
+<li>获取plmap，一个双向链表</li>
+<li>获取pool</li>
+</ol>
+</li>
+</ol>
+</li>
+<li><p>daos_obj_open(coh, oid, DAOS_OO_RW, &amp;oh, NULL);</p>
+<ol>
+<li>rc = dc_obj_open_task_create(coh, oid, mode, oh, ev, NULL, &amp;task); //创建task</li>
+<li>dc_task_schedule(tse_task_t *task, bool instant)//执行task</li>
+</ol>
+</li>
+<li><p>dts_buf_render//创建buffer</p>
+</li>
+<li><p>循环创建十个Dkey：</p>
+<ol>
+<li><p>d_iov_set(&amp;dkey, dkey_str, strlen(dkey_str));//初始化dkey</p>
+</li>
+<li><p>rc = daos_obj_update(oh, DAOS_TX_NONE, 0, &amp;dkey, 1, &amp;iod, &amp;sgl,NULL);//更新dkey，一个dkey下只有一个akey，因此只有1个oid和一个sgl.</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line">iod // iovec for memory buffer</span><br><span class="line">&#123;...&#125;</span><br><span class="line">iod_name</span><br><span class="line">iov_buf:0x5555555596e4</span><br><span class="line">iov_buf_len:4</span><br><span class="line">iov_len:4</span><br><span class="line">iod_type:DAOS_IOD_ARRAY</span><br><span class="line">iod_size:1</span><br><span class="line">iod_flags:0</span><br><span class="line">iod_nr:1</span><br><span class="line">iod_recxs:0x7fffffffd710</span><br><span class="line">rx_idx:0</span><br><span class="line">rx_nr:1024</span><br><span class="line">------------</span><br><span class="line">sgl  // scatter and gather list for memory buffers</span><br><span class="line">&#123;...&#125;</span><br><span class="line">sg_nr:1</span><br><span class="line">sg_nr_out:0</span><br><span class="line">sg_iovs:0x7fffffffd740</span><br><span class="line">iov_buf:0x7fffffffd7c0</span><br><span class="line">iov_buf_len:1024</span><br><span class="line">iov_len:1024</span><br><span class="line">------------</span><br><span class="line">daos_recx_t // 记录array的第一个元素地址和其中的元素个数</span><br></pre></td></tr></table></figure></li>
+</ol>
+</li>
+<li><p>循环fetch 10个dkey</p>
+</li>
+<li><p>遍历所有的dkey</p>
+</li>
+<li><p>删除一个dkey</p>
+</li>
+<li><p>遍历所有dkey，现在只有9个dkey了</p>
+</li>
+<li><p>daos_obj_close(oh, NULL);//关闭obj</p>
+</li>
+</ol>
+<h2 id="example-daos-key-sv"><a href="#example-daos-key-sv" class="headerlink" title="example_daos_key_sv()"></a>example_daos_key_sv()</h2><ol>
+<li><p>daos_obj_generate_oid(coh, &amp;oid, 0, OC_SX, 0, 0);</p>
+</li>
+<li><p>rc = daos_obj_open(coh, oid, DAOS_OO_RW, &amp;oh, NULL);</p>
+</li>
+<li><p>dts_buf_render(buf, BUFLEN);</p>
+</li>
+<li><p>rc = daos_obj_update(oh, DAOS_TX_NONE, 0, &amp;dkey, 1, &amp;iod, &amp;sgl,NULL);</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line">oh</span><br><span class="line">&#123;...&#125;</span><br><span class="line">cookie:71</span><br><span class="line">dkey</span><br><span class="line">&#123;...&#125;</span><br><span class="line">iov_buf:0x7fffffffd780</span><br><span class="line">iov_buf_len:6</span><br><span class="line">iov_len:6</span><br><span class="line">iod</span><br><span class="line">&#123;...&#125;</span><br><span class="line">iod_name</span><br><span class="line">iod_type:DAOS_IOD_SINGLE</span><br><span class="line">iod_size:1024</span><br><span class="line">iod_flags:4</span><br><span class="line">iod_nr:1</span><br><span class="line">iod_recxs:0x0</span><br><span class="line">rx_idx</span><br><span class="line">rx_nr</span><br><span class="line">&#123;...&#125;</span><br><span class="line">sg_nr:1</span><br><span class="line">sg_nr_out:0</span><br><span class="line">sg_iovs:0x7fffffffd720</span><br><span class="line">iov_buf:0x7fffffffd7c0</span><br><span class="line">iov_buf_len:1024</span><br><span class="line">iov_len:1024</span><br></pre></td></tr></table></figure></li>
+<li><p>循环10次，创建10个dkey，每个dkey有一个akey和一个1k的single value：</p>
+<ol>
+<li>初始化参数</li>
+</ol>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"> iod.iod_nr	= <span class="number">1</span>; <span class="comment">/** has to be 1 for single value */</span></span><br><span class="line">iod.iod_size	= BUFLEN; <span class="comment">/** size of the single value */</span></span><br><span class="line">iod.iod_recxs	= <span class="literal">NULL</span>; <span class="comment">/** recx is ignored for single value */</span></span><br><span class="line">iod.iod_type	= DAOS_IOD_SINGLE; <span class="comment">/** value type of the akey */</span></span><br></pre></td></tr></table></figure>
+
+<ol start="2">
+<li>rc = daos_obj_update(oh, DAOS_TX_NONE, 0, &amp;dkey, 1, &amp;iod, &amp;sgl,<br>NULL);</li>
+</ol>
+</li>
+<li><p>循环10次update：</p>
+<ol>
+<li>rc = daos_obj_update(oh, DAOS_TX_NONE, 0, &amp;dkey, 1, &amp;iod, &amp;sgl, NULL);</li>
+</ol>
+</li>
+<li><p>循环10次fetch：</p>
+<ol>
+<li>rc = daos_obj_fetch(oh, DAOS_TX_NONE, 0, &amp;dkey, 1, &amp;iod, &amp;sgl, NULL, NULL);</li>
+</ol>
+</li>
+</ol>
+<h2 id="example-daos-array"><a href="#example-daos-array" class="headerlink" title="example_daos_array()"></a>example_daos_array()</h2><ol>
+<li><p>daos_array_generate_oid(coh, &amp;oid, true, 0, 0, 0);</p>
+</li>
+<li><p>Create the array object with cell size 1 (byte array) and 1m chunk size (similar to stripe size in Lustre). Both are configurable by the user of course :</p>
+<p>rc = daos_array_create(coh, oid, DAOS_TX_NONE, 1, 1048576, &amp;oh,<br>NULL);</p>
+</li>
+<li><p>rc = daos_array_write(oh, DAOS_TX_NONE, &amp;iod, &amp;sgl, NULL);</p>
+</li>
+<li><p>rc = daos_array_get_size(oh, DAOS_TX_NONE, &amp;array_size, NULL); // check size</p>
+</li>
+<li><p>rc = daos_array_read(oh, DAOS_TX_NONE, &amp;iod, &amp;sgl, NULL); // read &amp; verify</p>
+</li>
+<li><p>daos_array_close(oh, NULL); //close</p>
+</li>
+</ol>
+<h2 id="example-daos-kv"><a href="#example-daos-kv" class="headerlink" title="example_daos_kv()"></a>example_daos_kv()</h2><p>Abstract iyt the 2-level keys and exposes a single Key and atomic value to represent a more traditional KV API.</p>
+<ol>
+<li>daos_obj_generate_oid(coh, &amp;oid, DAOS_OT_KV_HASHED, OC_SX, 0, 0);</li>
+<li>rc = daos_kv_open(coh, oid, DAOS_OO_RW, &amp;oh, NULL);</li>
+<li>dts_buf_render(buf, BUFLEN);</li>
+<li>循环10次，为rank0 put 10个key：<ol>
+<li>rc = daos_kv_put(oh, DAOS_TX_NONE, 0, key, BUFLEN, buf, NULL);</li>
+</ol>
+</li>
+<li>循环10次：<ol>
+<li>rc = daos_kv_get(oh, DAOS_TX_NONE, 0, key, &amp;size, NULL, NULL); // query size &amp; verify</li>
+<li>rc = daos_kv_get(oh, DAOS_TX_NONE, 0, key, &amp;size, rbuf, NULL); // get data write into rbuf</li>
+<li>memcmp(buf, rbuf, BUFLEN) // verify</li>
+</ol>
+</li>
+<li>list_keys(oh, &amp;num_keys); // 10个key</li>
+<li>rc = daos_kv_remove(oh, DAOS_TX_NONE, 0, key, NULL); // remove a key</li>
+<li>list_keys(oh, &amp;num_keys); // 9个key</li>
+<li>daos_kv_close(oh, NULL);</li>
+</ol>
+<h2 id="daos-cont-close-coh-NULL"><a href="#daos-cont-close-coh-NULL" class="headerlink" title="daos_cont_close(coh, NULL);"></a>daos_cont_close(coh, NULL);</h2><h2 id="daos-pool-disconnect-poh-NULL"><a href="#daos-pool-disconnect-poh-NULL" class="headerlink" title="daos_pool_disconnect(poh, NULL)"></a>daos_pool_disconnect(poh, NULL)</h2><h2 id="daos-fini"><a href="#daos-fini" class="headerlink" title="daos_fini();"></a>daos_fini();</h2>
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
     <link itemprop="mainEntityOfPage" href="http://example.com/2021/12/31/How-to-fix-lib-so-file-not-found-problem/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -667,7 +828,7 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">5</span>
+          <span class="site-state-item-count">6</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>

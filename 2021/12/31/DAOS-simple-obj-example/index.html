@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 6.0.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="Daos simple ObjConnect PoolCreate ContainerExample_daos_key_array daos_obj_generate_oid  poh &#x3D; dc_cont_hdl2pool_hdl(coh); &#x2F;&#x2F; 获取cookie pool &#x3D; dc_hdl2pool(poh); &#x2F;&#x2F;获取pool 获取plmap，一个双向链表 获取pool     daos_o">
+<meta property="og:type" content="article">
+<meta property="og:title" content="DAOS simple_obj example">
+<meta property="og:url" content="http://example.com/2021/12/31/DAOS-simple-obj-example/index.html">
+<meta property="og:site_name" content="Mars">
+<meta property="og:description" content="Daos simple ObjConnect PoolCreate ContainerExample_daos_key_array daos_obj_generate_oid  poh &#x3D; dc_cont_hdl2pool_hdl(coh); &#x2F;&#x2F; 获取cookie pool &#x3D; dc_hdl2pool(poh); &#x2F;&#x2F;获取pool 获取plmap，一个双向链表 获取pool     daos_o">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2021-12-31T07:28:23.000Z">
+<meta property="article:modified_time" content="2021-12-31T07:29:06.153Z">
+<meta property="article:author" content="Javie Chen">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="http://example.com/2021/12/31/DAOS-simple-obj-example/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'en'
+  };
+</script>
+
+  <title>DAOS simple_obj example | Mars</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Mars</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">Make the world better place.</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2021/12/31/DAOS-simple-obj-example/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Javie Chen">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Mars">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          DAOS simple_obj example
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2021-12-31 15:28:23 / Modified: 15:29:06" itemprop="dateCreated datePublished" datetime="2021-12-31T15:28:23+08:00">2021-12-31</time>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1 id="Daos-simple-Obj"><a href="#Daos-simple-Obj" class="headerlink" title="Daos simple Obj"></a>Daos simple Obj</h1><h2 id="Connect-Pool"><a href="#Connect-Pool" class="headerlink" title="Connect Pool"></a>Connect Pool</h2><h2 id="Create-Container"><a href="#Create-Container" class="headerlink" title="Create Container"></a>Create Container</h2><h2 id="Example-daos-key-array"><a href="#Example-daos-key-array" class="headerlink" title="Example_daos_key_array"></a>Example_daos_key_array</h2><ol>
+<li><p>daos_obj_generate_oid</p>
+<ol>
+<li>poh = dc_cont_hdl2pool_hdl(coh); // 获取cookie</li>
+<li>pool = dc_hdl2pool(poh); //获取pool<ol>
+<li>获取plmap，一个双向链表</li>
+<li>获取pool</li>
+</ol>
+</li>
+</ol>
+</li>
+<li><p>daos_obj_open(coh, oid, DAOS_OO_RW, &amp;oh, NULL);</p>
+<ol>
+<li>rc = dc_obj_open_task_create(coh, oid, mode, oh, ev, NULL, &amp;task); //创建task</li>
+<li>dc_task_schedule(tse_task_t *task, bool instant)//执行task</li>
+</ol>
+</li>
+<li><p>dts_buf_render//创建buffer</p>
+</li>
+<li><p>循环创建十个Dkey：</p>
+<ol>
+<li><p>d_iov_set(&amp;dkey, dkey_str, strlen(dkey_str));//初始化dkey</p>
+</li>
+<li><p>rc = daos_obj_update(oh, DAOS_TX_NONE, 0, &amp;dkey, 1, &amp;iod, &amp;sgl,NULL);//更新dkey，一个dkey下只有一个akey，因此只有1个oid和一个sgl.</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line">iod // iovec for memory buffer</span><br><span class="line">&#123;...&#125;</span><br><span class="line">iod_name</span><br><span class="line">iov_buf:0x5555555596e4</span><br><span class="line">iov_buf_len:4</span><br><span class="line">iov_len:4</span><br><span class="line">iod_type:DAOS_IOD_ARRAY</span><br><span class="line">iod_size:1</span><br><span class="line">iod_flags:0</span><br><span class="line">iod_nr:1</span><br><span class="line">iod_recxs:0x7fffffffd710</span><br><span class="line">rx_idx:0</span><br><span class="line">rx_nr:1024</span><br><span class="line">------------</span><br><span class="line">sgl  // scatter and gather list for memory buffers</span><br><span class="line">&#123;...&#125;</span><br><span class="line">sg_nr:1</span><br><span class="line">sg_nr_out:0</span><br><span class="line">sg_iovs:0x7fffffffd740</span><br><span class="line">iov_buf:0x7fffffffd7c0</span><br><span class="line">iov_buf_len:1024</span><br><span class="line">iov_len:1024</span><br><span class="line">------------</span><br><span class="line">daos_recx_t // 记录array的第一个元素地址和其中的元素个数</span><br></pre></td></tr></table></figure></li>
+</ol>
+</li>
+<li><p>循环fetch 10个dkey</p>
+</li>
+<li><p>遍历所有的dkey</p>
+</li>
+<li><p>删除一个dkey</p>
+</li>
+<li><p>遍历所有dkey，现在只有9个dkey了</p>
+</li>
+<li><p>daos_obj_close(oh, NULL);//关闭obj</p>
+</li>
+</ol>
+<h2 id="example-daos-key-sv"><a href="#example-daos-key-sv" class="headerlink" title="example_daos_key_sv()"></a>example_daos_key_sv()</h2><ol>
+<li><p>daos_obj_generate_oid(coh, &amp;oid, 0, OC_SX, 0, 0);</p>
+</li>
+<li><p>rc = daos_obj_open(coh, oid, DAOS_OO_RW, &amp;oh, NULL);</p>
+</li>
+<li><p>dts_buf_render(buf, BUFLEN);</p>
+</li>
+<li><p>rc = daos_obj_update(oh, DAOS_TX_NONE, 0, &amp;dkey, 1, &amp;iod, &amp;sgl,NULL);</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line">oh</span><br><span class="line">&#123;...&#125;</span><br><span class="line">cookie:71</span><br><span class="line">dkey</span><br><span class="line">&#123;...&#125;</span><br><span class="line">iov_buf:0x7fffffffd780</span><br><span class="line">iov_buf_len:6</span><br><span class="line">iov_len:6</span><br><span class="line">iod</span><br><span class="line">&#123;...&#125;</span><br><span class="line">iod_name</span><br><span class="line">iod_type:DAOS_IOD_SINGLE</span><br><span class="line">iod_size:1024</span><br><span class="line">iod_flags:4</span><br><span class="line">iod_nr:1</span><br><span class="line">iod_recxs:0x0</span><br><span class="line">rx_idx</span><br><span class="line">rx_nr</span><br><span class="line">&#123;...&#125;</span><br><span class="line">sg_nr:1</span><br><span class="line">sg_nr_out:0</span><br><span class="line">sg_iovs:0x7fffffffd720</span><br><span class="line">iov_buf:0x7fffffffd7c0</span><br><span class="line">iov_buf_len:1024</span><br><span class="line">iov_len:1024</span><br></pre></td></tr></table></figure></li>
+<li><p>循环10次，创建10个dkey，每个dkey有一个akey和一个1k的single value：</p>
+<ol>
+<li>初始化参数</li>
+</ol>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"> iod.iod_nr	= <span class="number">1</span>; <span class="comment">/** has to be 1 for single value */</span></span><br><span class="line">iod.iod_size	= BUFLEN; <span class="comment">/** size of the single value */</span></span><br><span class="line">iod.iod_recxs	= <span class="literal">NULL</span>; <span class="comment">/** recx is ignored for single value */</span></span><br><span class="line">iod.iod_type	= DAOS_IOD_SINGLE; <span class="comment">/** value type of the akey */</span></span><br></pre></td></tr></table></figure>
+
+<ol start="2">
+<li>rc = daos_obj_update(oh, DAOS_TX_NONE, 0, &amp;dkey, 1, &amp;iod, &amp;sgl,<br>NULL);</li>
+</ol>
+</li>
+<li><p>循环10次update：</p>
+<ol>
+<li>rc = daos_obj_update(oh, DAOS_TX_NONE, 0, &amp;dkey, 1, &amp;iod, &amp;sgl, NULL);</li>
+</ol>
+</li>
+<li><p>循环10次fetch：</p>
+<ol>
+<li>rc = daos_obj_fetch(oh, DAOS_TX_NONE, 0, &amp;dkey, 1, &amp;iod, &amp;sgl, NULL, NULL);</li>
+</ol>
+</li>
+</ol>
+<h2 id="example-daos-array"><a href="#example-daos-array" class="headerlink" title="example_daos_array()"></a>example_daos_array()</h2><ol>
+<li><p>daos_array_generate_oid(coh, &amp;oid, true, 0, 0, 0);</p>
+</li>
+<li><p>Create the array object with cell size 1 (byte array) and 1m chunk size (similar to stripe size in Lustre). Both are configurable by the user of course :</p>
+<p>rc = daos_array_create(coh, oid, DAOS_TX_NONE, 1, 1048576, &amp;oh,<br>NULL);</p>
+</li>
+<li><p>rc = daos_array_write(oh, DAOS_TX_NONE, &amp;iod, &amp;sgl, NULL);</p>
+</li>
+<li><p>rc = daos_array_get_size(oh, DAOS_TX_NONE, &amp;array_size, NULL); // check size</p>
+</li>
+<li><p>rc = daos_array_read(oh, DAOS_TX_NONE, &amp;iod, &amp;sgl, NULL); // read &amp; verify</p>
+</li>
+<li><p>daos_array_close(oh, NULL); //close</p>
+</li>
+</ol>
+<h2 id="example-daos-kv"><a href="#example-daos-kv" class="headerlink" title="example_daos_kv()"></a>example_daos_kv()</h2><p>Abstract iyt the 2-level keys and exposes a single Key and atomic value to represent a more traditional KV API.</p>
+<ol>
+<li>daos_obj_generate_oid(coh, &amp;oid, DAOS_OT_KV_HASHED, OC_SX, 0, 0);</li>
+<li>rc = daos_kv_open(coh, oid, DAOS_OO_RW, &amp;oh, NULL);</li>
+<li>dts_buf_render(buf, BUFLEN);</li>
+<li>循环10次，为rank0 put 10个key：<ol>
+<li>rc = daos_kv_put(oh, DAOS_TX_NONE, 0, key, BUFLEN, buf, NULL);</li>
+</ol>
+</li>
+<li>循环10次：<ol>
+<li>rc = daos_kv_get(oh, DAOS_TX_NONE, 0, key, &amp;size, NULL, NULL); // query size &amp; verify</li>
+<li>rc = daos_kv_get(oh, DAOS_TX_NONE, 0, key, &amp;size, rbuf, NULL); // get data write into rbuf</li>
+<li>memcmp(buf, rbuf, BUFLEN) // verify</li>
+</ol>
+</li>
+<li>list_keys(oh, &amp;num_keys); // 10个key</li>
+<li>rc = daos_kv_remove(oh, DAOS_TX_NONE, 0, key, NULL); // remove a key</li>
+<li>list_keys(oh, &amp;num_keys); // 9个key</li>
+<li>daos_kv_close(oh, NULL);</li>
+</ol>
+<h2 id="daos-cont-close-coh-NULL"><a href="#daos-cont-close-coh-NULL" class="headerlink" title="daos_cont_close(coh, NULL);"></a>daos_cont_close(coh, NULL);</h2><h2 id="daos-pool-disconnect-poh-NULL"><a href="#daos-pool-disconnect-poh-NULL" class="headerlink" title="daos_pool_disconnect(poh, NULL)"></a>daos_pool_disconnect(poh, NULL)</h2><h2 id="daos-fini"><a href="#daos-fini" class="headerlink" title="daos_fini();"></a>daos_fini();</h2>
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2021/12/31/How-to-fix-lib-so-file-not-found-problem/" rel="prev" title="How to fix lib.so file not found problem">
+      <i class="fa fa-chevron-left"></i> How to fix lib.so file not found problem
+    </a></div>
+      <div class="post-nav-item"></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#Daos-simple-Obj"><span class="nav-number">1.</span> <span class="nav-text">Daos simple Obj</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#Connect-Pool"><span class="nav-number">1.1.</span> <span class="nav-text">Connect Pool</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Create-Container"><span class="nav-number">1.2.</span> <span class="nav-text">Create Container</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Example-daos-key-array"><span class="nav-number">1.3.</span> <span class="nav-text">Example_daos_key_array</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#example-daos-key-sv"><span class="nav-number">1.4.</span> <span class="nav-text">example_daos_key_sv()</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#example-daos-array"><span class="nav-number">1.5.</span> <span class="nav-text">example_daos_array()</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#example-daos-kv"><span class="nav-number">1.6.</span> <span class="nav-text">example_daos_kv()</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#daos-cont-close-coh-NULL"><span class="nav-number">1.7.</span> <span class="nav-text">daos_cont_close(coh, NULL);</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#daos-pool-disconnect-poh-NULL"><span class="nav-number">1.8.</span> <span class="nav-text">daos_pool_disconnect(poh, NULL)</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#daos-fini"><span class="nav-number">1.9.</span> <span class="nav-text">daos_fini();</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Javie Chen</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">6</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Javie Chen</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a>
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>
