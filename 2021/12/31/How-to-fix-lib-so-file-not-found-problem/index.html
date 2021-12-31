@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 6.0.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="问题在debug DAOS的过程中，gdb在执行可执行文件时，未能正确的加载libdaos的动态链接库。 什么是动态链接库Linux中的共享库为程序提供了各种可重用函数。 假设我们想编写一个以压缩文件为输入的程序。为此，我们可以使用zlib等现有库，而不是自己实现解压缩函数。 程序在启动时加载共享库。 查看可执行文件使用了哪些动态链接库1234567891011$ ldd &#x2F;usr&#x2F;bin&#x2F;cla">
+<meta property="og:type" content="article">
+<meta property="og:title" content="How to fix lib.so file not found problem">
+<meta property="og:url" content="http://example.com/2021/12/31/How-to-fix-lib-so-file-not-found-problem/index.html">
+<meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="问题在debug DAOS的过程中，gdb在执行可执行文件时，未能正确的加载libdaos的动态链接库。 什么是动态链接库Linux中的共享库为程序提供了各种可重用函数。 假设我们想编写一个以压缩文件为输入的程序。为此，我们可以使用zlib等现有库，而不是自己实现解压缩函数。 程序在启动时加载共享库。 查看可执行文件使用了哪些动态链接库1234567891011$ ldd &#x2F;usr&#x2F;bin&#x2F;cla">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2021-12-31T03:28:41.000Z">
+<meta property="article:modified_time" content="2021-12-31T03:29:26.775Z">
+<meta property="article:author" content="John Doe">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="http://example.com/2021/12/31/How-to-fix-lib-so-file-not-found-problem/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'en'
+  };
+</script>
+
+  <title>How to fix lib.so file not found problem | Hexo</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Hexo</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2021/12/31/How-to-fix-lib-so-file-not-found-problem/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="John Doe">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hexo">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          How to fix lib.so file not found problem
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2021-12-31 11:28:41 / Modified: 11:29:26" itemprop="dateCreated datePublished" datetime="2021-12-31T11:28:41+08:00">2021-12-31</time>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h2 id="问题"><a href="#问题" class="headerlink" title="问题"></a>问题</h2><p>在debug DAOS的过程中，gdb在执行可执行文件时，未能正确的加载libdaos的动态链接库。</p>
+<h2 id="什么是动态链接库"><a href="#什么是动态链接库" class="headerlink" title="什么是动态链接库"></a>什么是动态链接库</h2><p>Linux中的共享库为程序提供了各种可重用函数。</p>
+<p>假设我们想编写一个以压缩文件为输入的程序。为此，我们可以使用zlib等现有库，而不是自己实现解压缩函数。</p>
+<p>程序在启动时加载共享库。</p>
+<h2 id="查看可执行文件使用了哪些动态链接库"><a href="#查看可执行文件使用了哪些动态链接库" class="headerlink" title="查看可执行文件使用了哪些动态链接库"></a>查看可执行文件使用了哪些动态链接库</h2><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> ldd /usr/bin/clang</span></span><br><span class="line">/usr/bin/clang:</span><br><span class="line">	linux-vdso.so.1 (0x00007ffd34a90000)</span><br><span class="line">	libclang-cpp.so.13 =&gt; /usr/bin/../lib/libclang-cpp.so.13 (0x00007f24c5a94000)</span><br><span class="line">	libLLVM-13.so =&gt; /usr/bin/../lib/libLLVM-13.so (0x00007f24c1548000)</span><br><span class="line">	libstdc++.so.6 =&gt; /usr/bin/../lib/libstdc++.so.6 (0x00007f24c12d6000)</span><br><span class="line">	libm.so.6 =&gt; /usr/bin/../lib/libm.so.6 (0x00007f24c11f8000)</span><br><span class="line">	libgcc_s.so.1 =&gt; /usr/bin/../lib/libgcc_s.so.1 (0x00007f24c11dd000)</span><br><span class="line">	libc.so.6 =&gt; /usr/bin/../lib/libc.so.6 (0x00007f24c0fc4000)</span><br><span class="line">	/lib/ld-linux-x86-64.so.2 =&gt; /usr/lib/ld-linux-x86-64.so.2 (0x00007f24c95d4000)</span><br><span class="line">	libz.so.1 =&gt; /usr/bin/../lib/../lib/libz.so.1 (0x00007f24c0fad000)</span><br></pre></td></tr></table></figure>
+
+<h2 id="查找未能找到的库"><a href="#查找未能找到的库" class="headerlink" title="查找未能找到的库"></a>查找未能找到的库</h2><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> apt search zstd</span></span><br><span class="line">Sorting... Done</span><br><span class="line">Full Text Search... Done</span><br><span class="line">zstd/stable 1.5.0 aarch64</span><br><span class="line">  Zstandard compression.</span><br></pre></td></tr></table></figure>
+
+<h2 id="LD-LIBRARY-PATH-环境变量"><a href="#LD-LIBRARY-PATH-环境变量" class="headerlink" title="LD_LIBRARY_PATH 环境变量"></a><em>LD_LIBRARY_PATH</em> 环境变量</h2><p>我们可以指定在LD_LIBRARY_PATH环境变量中搜索共享库的目录。</p>
+<p>LD_LIBRARY_PATH是一个冒号分隔的目录列表，就像PATH变量一样。</p>
+<p>默认搜索路径通常仅限于/usr/lib和/usr/local/lib。</p>
+<p>假设我们有一个链接到libfoo.so的程序，位于/home/baeldung/libs/libfoo.so，位于默认搜索路径之外。然后，我们可以使用此变量附加到搜索路径并解决问题。</p>
+<p>首先，让我们使用ldd命令确认程序链接到的确切库：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> ./program</span></span><br><span class="line">./program: error while loading shared libraries: libfoo.so: cannot open shared object file: No such file or directory</span><br><span class="line"><span class="meta">$</span><span class="bash"> ldd ./program</span></span><br><span class="line">./program:</span><br><span class="line">	linux-vdso.so.1 (0x00007ffce871b000)</span><br><span class="line">	libfoo.so =&gt; not found</span><br><span class="line">	libc.so.6 =&gt; /usr/lib/libc.so.6 (0x00007fdceadaf000)</span><br><span class="line">	/lib/ld-linux-x86-64.so.2 =&gt; /usr/lib/ld-linux-x86-64.so.2 (0x00007fdceafd3000)</span><br></pre></td></tr></table></figure>
+
+<p>现在，让我们将目录添加到LD_LIBRARY_PATH，并使我们的程序正常工作：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> <span class="built_in">export</span> LD_LIBRARY_PATH=/home/baeldung/libs</span></span><br><span class="line"><span class="meta">$</span><span class="bash"> ldd ./program</span></span><br><span class="line">./program:</span><br><span class="line">	linux-vdso.so.1 (0x00007ffe28dfd000)</span><br><span class="line">	libfoo.so =&gt; /home/baeldung/libs/libfoo.so (0x00007f8f0f7ba000)</span><br><span class="line">	libc.so.6 =&gt; /usr/lib/libc.so.6 (0x00007f8f0f59d000)</span><br><span class="line">	/lib/ld-linux-x86-64.so.2 =&gt; /usr/lib/ld-linux-x86-64.so.2 (0x00007f8f0f7c6000)</span><br></pre></td></tr></table></figure>
+
+
+
+<h2 id="永久生效的配置"><a href="#永久生效的配置" class="headerlink" title="永久生效的配置"></a>永久生效的配置</h2><p>我们可以使用/etc/ld.so.conf文件永久设置库搜索路径。在这个文件中，我们指定了一个以换行符分隔的目录列表。</p>
+<p>让我们再次修复libfoo.so错误：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> ./program</span></span><br><span class="line">./program: error while loading shared libraries: libfoo.so: cannot open shared object file: No such file or directory</span><br><span class="line"><span class="meta">$</span><span class="bash"> <span class="built_in">echo</span> <span class="string">&quot;/home/baeldung/libs&quot;</span> | sudo tee /etc/ld.so.conf</span></span><br><span class="line">/home/baeldung/libs</span><br><span class="line"><span class="meta">$</span><span class="bash"> sudo ldconfig</span></span><br><span class="line"><span class="meta">$</span><span class="bash"> ldd ./program</span></span><br><span class="line">./program:</span><br><span class="line">	linux-vdso.so.1 (0x00007ffefc3db000)</span><br><span class="line">	libfoo.so =&gt; /home/baeldung/libs/libfoo.so (0x00007f021e88d000)</span><br><span class="line">	libc.so.6 =&gt; /usr/lib/libc.so.6 (0x00007f021e674000)</span><br><span class="line">	/lib/ld-linux-x86-64.so.2 =&gt; /usr/lib/ld-linux-x86-64.so.2 (0x00007f021e89e000)</span><br></pre></td></tr></table></figure>
+
+<p>我们必须运行一次ldconfig命令，以使系统意识到新路径。</p>
+<h2 id="ldconfig-指令"><a href="#ldconfig-指令" class="headerlink" title="ldconfig 指令"></a>ldconfig 指令</h2><p>我们可能最近安装了新的共享库或修改了共享库搜索路径。因此，我们需要运行ldconfig命令。</p>
+<p>它更新链接器的缓存，使其了解新的共享库。</p>
+<p>链接器称为ld.so，加载程序的共享库。</p>
+<p>我们可以使用-p标志调用ldconfig来检查当前缓存：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> ldconfig -p</span></span><br><span class="line">347 libs found in cache `/etc/ld.so.cache&#x27;</span><br><span class="line">	libzstd.so.1 (libc6,x86-64) =&gt; /usr/lib/libzstd.so.1</span><br><span class="line">	libzstd.so (libc6,x86-64) =&gt; /usr/lib/libzstd.so</span><br><span class="line">	libz.so.1 (libc6,x86-64) =&gt; /usr/lib/libz.so.1</span><br><span class="line">	libz.so (libc6,x86-64) =&gt; /usr/lib/libz.so</span><br><span class="line">	libx265.so.199 (libc6,x86-64) =&gt; /usr/lib/libx265.so.199</span><br><span class="line">	libx265.so (libc6,x86-64) =&gt; /usr/lib/libx265.so</span><br><span class="line">	libx264.so.157 (libc6,x86-64) =&gt; /usr/lib/libx264.so.157</span><br><span class="line">	libx264.so (libc6,x86-64) =&gt; /usr/lib/libx264.so</span><br></pre></td></tr></table></figure>
+
+
+
+<h2 id="在编译时设置库路径"><a href="#在编译时设置库路径" class="headerlink" title="在编译时设置库路径"></a>在编译时设置库路径</h2><p>如果我们可以访问程序的源代码，我们可以在链接过程中使用特殊标志编译它，以便找到共享库。</p>
+<p>我们可以在运行时使用ld’s-rpath标志将库路径传递给动态链接器。</p>
+<p>让我们编译一个基本程序并将其链接到我们的库：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> <span class="built_in">pwd</span></span></span><br><span class="line">/home/baeldung/libs</span><br><span class="line"><span class="meta">$</span><span class="bash"> ls</span></span><br><span class="line">libfoo.so</span><br><span class="line"><span class="meta">$</span><span class="bash"> <span class="built_in">echo</span> <span class="string">&quot;int main() &#123;&#125;&quot;</span> &gt; program.c <span class="comment"># Dummy program</span></span></span><br><span class="line"><span class="meta">$</span><span class="bash"> cc program.c libfoo.so <span class="comment"># Link to our library</span></span></span><br><span class="line"><span class="meta">$</span><span class="bash"> ./a.out</span> </span><br><span class="line">./a.out: error while loading shared libraries: libfoo.so: cannot open shared object file: No such file or directory</span><br><span class="line"><span class="meta">$</span><span class="bash"> ldd ./a.out</span> </span><br><span class="line">./a.out:</span><br><span class="line">	linux-vdso.so.1 (0x00007ffcbc1f8000)</span><br><span class="line">	libfoo.so =&gt; not found</span><br><span class="line">	libc.so.6 =&gt; /usr/lib/libc.so.6 (0x00007feb0ee04000)</span><br><span class="line">	/lib/ld-linux-x86-64.so.2 =&gt; /usr/lib/ld-linux-x86-64.so.2 (0x00007feb0f029000)</span><br></pre></td></tr></table></figure>
+
+<p>我们可以看到程序无法加载我们的共享库。</p>
+<p>现在，让我们尝试使用-rpath标志编译它，将/home/baeldung/libs添加到库搜索路径中：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> gcc program.c libfoo.so -Wl,-rpath=/home/baeldung/libs</span></span><br><span class="line"><span class="meta">$</span><span class="bash"> ldd ./a.out</span> </span><br><span class="line">./a.out:</span><br><span class="line">	linux-vdso.so.1 (0x00007ffd0fbad000)</span><br><span class="line">	libfoo.so =&gt; /home/baeldung/libs/libfoo.so (0x00007fba09d99000)</span><br><span class="line">	libc.so.6 =&gt; /usr/lib/libc.so.6 (0x00007fba09b7b000)</span><br><span class="line">	/lib/ld-linux-x86-64.so.2 =&gt; /usr/lib/ld-linux-x86-64.so.2 (0x00007fba09da5000)</span><br></pre></td></tr></table></figure>
+
+<p>在这里，我们使用gcc的-Wl标志将参数传递给ld。</p>
+<h2 id="libdaos未找到的解决方案"><a href="#libdaos未找到的解决方案" class="headerlink" title="libdaos未找到的解决方案"></a>libdaos未找到的解决方案</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">echo &quot;/home/kuhan/daos/build/release/gcc/src/client/api/&quot; | sudo tee /etc/ld.so.conf</span><br></pre></td></tr></table></figure>
+
+
+
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a target="_blank" rel="noopener" href="https://www.baeldung.com/linux/solve-shared-object-error">https://www.baeldung.com/linux/solve-shared-object-error</a></p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2021/12/30/How-to-debug-daos-engine-via-vscode-md/" rel="prev" title="How_to_debug_daos_engine_via_vscode.md">
+      <i class="fa fa-chevron-left"></i> How_to_debug_daos_engine_via_vscode.md
+    </a></div>
+      <div class="post-nav-item"></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%97%AE%E9%A2%98"><span class="nav-number">1.</span> <span class="nav-text">问题</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BB%80%E4%B9%88%E6%98%AF%E5%8A%A8%E6%80%81%E9%93%BE%E6%8E%A5%E5%BA%93"><span class="nav-number">2.</span> <span class="nav-text">什么是动态链接库</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%9F%A5%E7%9C%8B%E5%8F%AF%E6%89%A7%E8%A1%8C%E6%96%87%E4%BB%B6%E4%BD%BF%E7%94%A8%E4%BA%86%E5%93%AA%E4%BA%9B%E5%8A%A8%E6%80%81%E9%93%BE%E6%8E%A5%E5%BA%93"><span class="nav-number">3.</span> <span class="nav-text">查看可执行文件使用了哪些动态链接库</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%9F%A5%E6%89%BE%E6%9C%AA%E8%83%BD%E6%89%BE%E5%88%B0%E7%9A%84%E5%BA%93"><span class="nav-number">4.</span> <span class="nav-text">查找未能找到的库</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#LD-LIBRARY-PATH-%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F"><span class="nav-number">5.</span> <span class="nav-text">LD_LIBRARY_PATH 环境变量</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%B0%B8%E4%B9%85%E7%94%9F%E6%95%88%E7%9A%84%E9%85%8D%E7%BD%AE"><span class="nav-number">6.</span> <span class="nav-text">永久生效的配置</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#ldconfig-%E6%8C%87%E4%BB%A4"><span class="nav-number">7.</span> <span class="nav-text">ldconfig 指令</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%9C%A8%E7%BC%96%E8%AF%91%E6%97%B6%E8%AE%BE%E7%BD%AE%E5%BA%93%E8%B7%AF%E5%BE%84"><span class="nav-number">8.</span> <span class="nav-text">在编译时设置库路径</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#libdaos%E6%9C%AA%E6%89%BE%E5%88%B0%E7%9A%84%E8%A7%A3%E5%86%B3%E6%96%B9%E6%A1%88"><span class="nav-number">9.</span> <span class="nav-text">libdaos未找到的解决方案</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8F%82%E8%80%83"><span class="nav-number">10.</span> <span class="nav-text">参考</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">John Doe</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">5</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">John Doe</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a>
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>
