@@ -1,0 +1,690 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 6.0.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="[TOC] Consensus Algorithm满足三个条件： non-triviality:if the value v is decided,then v must have been proposed by a proposer safety &amp; safe learning:任意两个proposr，得知decided value is a andf b,必有a&#x3D;b classic">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Distributed protocol">
+<meta property="og:url" content="http://example.com/2022/01/04/Distributed-protocol/index.html">
+<meta property="og:site_name" content="Mars">
+<meta property="og:description" content="[TOC] Consensus Algorithm满足三个条件： non-triviality:if the value v is decided,then v must have been proposed by a proposer safety &amp; safe learning:任意两个proposr，得知decided value is a andf b,必有a&#x3D;b classic">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2022-01-04T02:39:58.000Z">
+<meta property="article:modified_time" content="2022-01-04T02:40:34.666Z">
+<meta property="article:author" content="Javie Chen">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="http://example.com/2022/01/04/Distributed-protocol/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'en'
+  };
+</script>
+
+  <title>Distributed protocol | Mars</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Mars</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">Make the world better place.</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+        <li class="menu-item menu-item-schedule">
+
+    <a href="/schedule/" rel="section"><i class="fa fa-calendar fa-fw"></i>Schedule</a>
+
+  </li>
+        <li class="menu-item menu-item-sitemap">
+
+    <a href="/sitemap.xml" rel="section"><i class="fa fa-sitemap fa-fw"></i>Sitemap</a>
+
+  </li>
+        <li class="menu-item menu-item-commonweal">
+
+    <a href="/404/" rel="section"><i class="fa fa-heartbeat fa-fw"></i>Commonweal 404</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2022/01/04/Distributed-protocol/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Javie Chen">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Mars">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Distributed protocol
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2022-01-04 10:39:58 / Modified: 10:40:34" itemprop="dateCreated datePublished" datetime="2022-01-04T10:39:58+08:00">2022-01-04</time>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>[TOC]</p>
+<h2 id="Consensus-Algorithm"><a href="#Consensus-Algorithm" class="headerlink" title="Consensus Algorithm"></a>Consensus Algorithm</h2><p>满足三个条件：</p>
+<p>non-triviality:if the value v is decided,then v must have been proposed by a proposer</p>
+<p>safety &amp; safe learning:任意两个proposr，得知decided value is a andf b,必有a=b</p>
+<h3 id="classic-paxos"><a href="#classic-paxos" class="headerlink" title="classic paxos"></a>classic paxos</h3><p>two phase：</p>
+<ol>
+<li>reading phase</li>
+<li>writing phase</li>
+</ol>
+<p>properties for proposer</p>
+<ol>
+<li>epoch</li>
+<li>proppser只在收到大部分acceptor的promise后开始提议</li>
+<li>proposer只在收到大部分acceptor的accepts后返回最终的决议值</li>
+<li>如果之前没有确定value，任何value可以被propose，如果有，则epoch最高的value被propose</li>
+<li>被proposer使用的epoch大于之前所有被使用过得epoch</li>
+</ol>
+<p>properties for acceptor：</p>
+<ol>
+<li>acceptor只处理收到的的prepare或者propose中epoch&gt;= last promised epoch的消息</li>
+<li>For each prepare or propose message received, the acceptor’s last promised epoch is set to the epoch received. This is after Property 6 has been satisfied.</li>
+<li>For each prepare message received, the acceptor replies with promise. This is after Properties 6 &amp; 7 have been satisfied.</li>
+<li>For each propose message received, the acceptor replies with accept after updating its last accepted proposal. This is after Properties 6 &amp; 7 have been satisfied.</li>
+<li>Last promised epoch and last accepted proposal are persistent and only updated by Properties 7 &amp; 9</li>
+</ol>
+<h2 id="classic-paxos的改进"><a href="#classic-paxos的改进" class="headerlink" title="classic paxos的改进"></a>classic paxos的改进</h2><ol>
+<li>对于epoch号比较小的prepare或者proposal，acceptor不会做响应，只能由proposer等待超时并重试，此处可以改进为acceptor发送no—prepare或者no-accept消息。</li>
+<li>在prepare阶段，如果proposer收到的大部分ack中的value和第二阶段的proposal value相同，则可以跳过第二阶段，直接返回value？算法如何知道确定的值就是第二阶段需要propose的值呢？</li>
+<li>在一个acceptor收到确认消息后，就返回decided给proposer，proposer不必等大多数acceptor返回确认就可以直接返回确认值。（这样做真的没问题吗）Mencius</li>
+</ol>
+<h2 id="proposal-copying"><a href="#proposal-copying" class="headerlink" title="proposal copying"></a>proposal copying</h2><p>（Unique proposer uses each epoch）一个epoch内只有一个proposal能被接受，若proposer在phase one接受到了NACK中，发现max Epoch等于prepare中发送的epoch且已有了promised的值，则做proposal copying并跳到phase 2（为了更快的收敛？）</p>
+<h1 id="Raft"><a href="#Raft" class="headerlink" title="Raft"></a>Raft</h1><ol>
+<li>三种状态<ol>
+<li>leader</li>
+<li>follower</li>
+<li>candidate</li>
+</ol>
+</li>
+<li>每个server存储一个current term number</li>
+<li>使用RPC通信：<ol>
+<li>RequestVote RPC （initiated by candidates during elections）</li>
+<li>Append_entries RPCS(initiated by leaders to replicate log entries and to provide a form of heartbeat</li>
+</ol>
+</li>
+<li>leader election<ol>
+<li>时机：只要follower能从leader或者candidate收到rpc，remain 状态，如果在election  timeout时间内没有收到rpc，认为leader死亡，开始leader election</li>
+<li>选举流程：follower increments current term(term += 1) 并且转换为candidate状态，vote for self并且并行的发送requestVote RPC给集群中的其他server</li>
+<li>candidate保持状态直到：<ol>
+<li>赢得选举</li>
+<li>其他server赢得选举</li>
+<li>一段时间过去了没有胜出者</li>
+</ol>
+</li>
+<li>candidate赢得选举的条件：在 same term的条件下获取集群内大部分server的votes。一个server只能为一个candidate vote，first-come-first-serverd。一旦赢得选举则向其他的节点发送heartbeat to prevent new election</li>
+<li>如何解决split votes（每个server同时开始选举并为自己投票）<ol>
+<li>random election timeout（150-300ms）</li>
+</ol>
+</li>
+<li>followers只为log entry大于自己的candidate投票</li>
+<li>candidate 收到 leader的request，比较其term和自己的term，若大于自己的则变为follower，否则reject request继续保持candidate状态</li>
+</ol>
+</li>
+<li>Term（逻辑时钟）<ol>
+<li>特性：连续数字，每个server都会有一个term</li>
+<li>term changes whenever servers communitacte</li>
+<li>If server a‘s term smaller than b’s, a change it’s term to b’s</li>
+<li>candidate of leader founds larger term, trun itself to follower</li>
+<li>if server recieved stale term request , reject it</li>
+</ol>
+</li>
+<li>Log replication<ol>
+<li>流程<ol>
+<li>command come</li>
+<li>leader append command to it’s log </li>
+<li>Sent log to other servers to replicate the entry</li>
+<li>recieved most servers reply, leader apply this comand to it’s state machine</li>
+<li>return result to client</li>
+<li>(if followers crash or run slowlly, or network issues, leader send rpc infinitely until all followers store all log)</li>
+</ol>
+</li>
+<li>log structure<ol>
+<li>state machine command</li>
+<li>term number<ol>
+<li>to detect inconsistencies between logs</li>
+</ol>
+</li>
+<li>integer index <ol>
+<li>to identify its position in the log</li>
+</ol>
+</li>
+</ol>
+</li>
+<li>commited log entries<ol>
+<li>when ont entry has replicated it on a majority of servers</li>
+<li>leader includs highest index it knows to be commietted int appedEntries RPCs so other followers learns that and then commite that entry to its state machine</li>
+</ol>
+</li>
+<li>how to handle inconsistencies?<ol>
+<li>by forcing the follower’s logs to duplicate it’s own(follower overrited)</li>
+<li>leader 存储每个follower的nextIndex array，此array初始值为last one of leader index + 1，然后向follower发送AppendEntries RPC用于指针探测，如果探测失败则以1步距回退，直到找到一个agree point。（Leader Append-Only确保了leader不会删除或者覆盖他自己的log）</li>
+</ol>
+</li>
+<li>log被复制到大多数节点上之后leader crush但是log未commit，仍有可能被覆盖掉</li>
+<li>Raft 通过 up-to-date vote 来确保新leader有所有commited logs<ol>
+<li>if tyhe logs have last entries with different terms, the the log with the later term is more up-to-date</li>
+<li>if the logs end up with the same term ,then whicheve log is longer is more up-to-date</li>
+</ol>
+</li>
+</ol>
+</li>
+<li>Timing and availability<ol>
+<li>broadcastTIme(heartBeat) &lt;&lt; electionTimeOut&lt;&lt;MTBF</li>
+</ol>
+</li>
+<li>Raft 图解<ol>
+<li><a target="_blank" rel="noopener" href="http://thesecretlivesofdata.com/raft/">http://thesecretlivesofdata.com/raft/</a></li>
+<li><a target="_blank" rel="noopener" href="https://raft.github.io/">https://raft.github.io</a></li>
+</ol>
+</li>
+</ol>
+<h2 id="Chain-replication"><a href="#Chain-replication" class="headerlink" title="Chain replication"></a>Chain replication</h2><ol>
+<li>request processing<ol>
+<li>reply generation:<ol>
+<li>reply is generated and sent by tail</li>
+</ol>
+</li>
+<li>Query processing<ol>
+<li>Query processed by tail</li>
+</ol>
+</li>
+<li>Update processing<ol>
+<li>update processed by head and delevered on chain</li>
+</ol>
+</li>
+</ol>
+</li>
+<li>Advantages &amp; disadvantages<ol>
+<li>Read:cheap beacause only tail reply the query</li>
+<li>Write:more heavy beacause all nodes need to participate, but compution only need once because head compute the value and other nodes only need to do once write.</li>
+</ol>
+</li>
+<li>Coping with server failures<ol>
+<li>直接删掉？</li>
+</ol>
+</li>
+<li>……(没看，失去兴趣)</li>
+<li>参考：<a target="_blank" rel="noopener" href="https://www.dazhuanlan.com/andyblack/topics/1098082">https://www.dazhuanlan.com/andyblack/topics/1098082</a></li>
+</ol>
+<h2 id="FaceBook-F4-system"><a href="#FaceBook-F4-system" class="headerlink" title="FaceBook F4 system"></a>FaceBook F4 system</h2><ol>
+<li><p>Design details</p>
+<ol>
+<li><p>Volumes:</p>
+<ol>
+<li>state：    <ol>
+<li>Unlocked: under 100GB, allow read/write/delete</li>
+<li>Locked: only read/delete is allowed</li>
+</ol>
+</li>
+<li>类别：<ol>
+<li>dataFile: BLOB + metadata(key,size or checksum)</li>
+<li>index FIle:aimed to allow rebuild when rebooting</li>
+<li>Journal File:tracks BLOBS that have been deleted</li>
+</ol>
+</li>
+</ol>
+</li>
+<li><p>System overall</p>
+<ol>
+<li>路由<ol>
+<li>Create to Hot storage</li>
+<li>delete on hot or warm storage</li>
+<li>read on cache or hot or warm storage</li>
+</ol>
+</li>
+<li>controller<ol>
+<li>provision new machines</li>
+<li>Maintain pool of unlocked volumes</li>
+<li>ensure all logical volumes have enough physical volumes backing them</li>
+<li>create new physical volumes if necessary</li>
+<li>perform compaction and garbage clean</li>
+</ol>
+</li>
+<li>Router tier<ol>
+<li>存储了逻辑volume到物理volume的映射</li>
+</ol>
+</li>
+<li>Transformer Tier<ol>
+<li>讲计算和存储分离，计算节点用来计算，存储节点仅仅用来存取数据</li>
+</ol>
+</li>
+</ol>
+<p>……..(未读完)</p>
+</li>
+</ol>
+</li>
+</ol>
+<h2 id="可靠性策略"><a href="#可靠性策略" class="headerlink" title="可靠性策略"></a>可靠性策略</h2><ol>
+<li>副本策略：不同节点/不同机架/不同DC</li>
+<li>一致性hash</li>
+<li>CRUSH（Controlled Replication Under Scalable Hashing）：CRUSH 算法的设置目的是使数据能够根<strong>据设备的存储能力和宽带资源加权平均地分布，</strong>并保持一个相对的概率平衡。 副本放置在具有层次结构的存储设备中，这对数据安全也有重要影响。 通过反射系统的物理安装组织，CRUSH算法可以将系统模块化，从而定位潜在的设备故障。</li>
+<li>EC(Erasure Code) 纠删码<ol>
+<li>特点：<ol>
+<li>低冗余，高磁盘利用率</li>
+<li>数据恢复代价高</li>
+<li>数据更新代价高</li>
+</ol>
+</li>
+</ol>
+</li>
+</ol>
+<h2 id="分布式事务协议"><a href="#分布式事务协议" class="headerlink" title="分布式事务协议"></a>分布式事务协议</h2><ol>
+<li>2PC<ol>
+<li>阶段：<ol>
+<li>Prepare(询问):master发送prepare给参与节点，参与节点执行事务中的操作，并返回yes or no给master</li>
+<li>Commit（提交或者Abort):master 收到所有节点的yes信息，则进入commit流程，发送commit给所有的参与节点。若收到任意节点的no，则进行abort流程，参与者返回执行结果给master</li>
+</ol>
+</li>
+<li>存在的问题：<ol>
+<li>同步阻塞问题：若参与者共享同步资源，参与者访问临界资源存在阻塞</li>
+<li>协调者故障导致参与者长期阻塞</li>
+<li>数据不一致：协调者在发送commit阶段故障，部分参与者收到了commit</li>
+<li>协调者发送commit的时候宕机，唯一收到此消息的参与者此时也宕机，事务状态未可知</li>
+</ol>
+</li>
+</ol>
+</li>
+<li>3PC<ol>
+<li>阶段：<ol>
+<li>can-commit<ol>
+<li>协调者询问参与者是否可以commit</li>
+<li>参与者回复yes or no</li>
+</ol>
+</li>
+<li>pre-commit<ol>
+<li>如果参与者全都是yes，则协调者执行：<ol>
+<li>协调者发送预提交请求</li>
+<li>参与者预提交，记录undo和redo日志，锁定记录，返回执行响应</li>
+</ol>
+</li>
+<li>如果任意一个参与者发送了no或者等待超时，协调者执行：<ol>
+<li>发送abort请求</li>
+<li>参与者收到abort或者等待超时执行中断</li>
+</ol>
+</li>
+</ol>
+</li>
+<li>do-commit<ol>
+<li>收到全部回复都是yes：<ol>
+<li>发送commit</li>
+<li>参与者提交事务，释放资源</li>
+<li>参与者回复响应</li>
+<li>协调者收到全部响应，事务完成</li>
+</ol>
+</li>
+<li>收到任意no<ol>
+<li>发送abort</li>
+<li>参与者回滚，释放资源</li>
+<li>参与者回复响应</li>
+<li>协调者收到所有回复，abort完成</li>
+</ol>
+</li>
+</ol>
+</li>
+</ol>
+</li>
+<li>如何解决协调者超时？<ol>
+<li>超时机制</li>
+</ol>
+</li>
+<li>如何解决同步阻塞？<ol>
+<li>无法解决</li>
+</ol>
+</li>
+<li>如何解决不一致？<ol>
+<li>无法解决</li>
+</ol>
+</li>
+<li>相较于2pc的优点？<ol>
+<li>超时机制一定程度上解决协调者宕机问题</li>
+<li>第一阶段一分为二，canCommit阶段尽早可以判断事务是否可以执行，占用资源少，提高了吞吐量。</li>
+</ol>
+</li>
+</ol>
+</li>
+</ol>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2022/01/04/General-storage-knowledge/" rel="prev" title="General storage knowledge">
+      <i class="fa fa-chevron-left"></i> General storage knowledge
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2022/01/04/Programming-language-GO-RUST/" rel="next" title="Programming language GO & RUST">
+      Programming language GO & RUST <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#Consensus-Algorithm"><span class="nav-number">1.</span> <span class="nav-text">Consensus Algorithm</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#classic-paxos"><span class="nav-number">1.1.</span> <span class="nav-text">classic paxos</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#classic-paxos%E7%9A%84%E6%94%B9%E8%BF%9B"><span class="nav-number">2.</span> <span class="nav-text">classic paxos的改进</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#proposal-copying"><span class="nav-number">3.</span> <span class="nav-text">proposal copying</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Raft"><span class="nav-number"></span> <span class="nav-text">Raft</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#Chain-replication"><span class="nav-number">1.</span> <span class="nav-text">Chain replication</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#FaceBook-F4-system"><span class="nav-number">2.</span> <span class="nav-text">FaceBook F4 system</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8F%AF%E9%9D%A0%E6%80%A7%E7%AD%96%E7%95%A5"><span class="nav-number">3.</span> <span class="nav-text">可靠性策略</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%88%86%E5%B8%83%E5%BC%8F%E4%BA%8B%E5%8A%A1%E5%8D%8F%E8%AE%AE"><span class="nav-number">4.</span> <span class="nav-text">分布式事务协议</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Javie Chen</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">6</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2022</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Javie Chen</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a>
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>
