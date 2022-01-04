@@ -176,6 +176,351 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2022/01/04/Dkey-Array-Object-update/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Javie Chen">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Mars">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2022/01/04/Dkey-Array-Object-update/" class="post-title-link" itemprop="url">Dkey-Array Object update</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2022-01-04 17:50:56 / Modified: 17:51:09" itemprop="dateCreated datePublished" datetime="2022-01-04T17:50:56+08:00">2022-01-04</time>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h3 id="daos-obj-generate-oid"><a href="#daos-obj-generate-oid" class="headerlink" title="daos_obj_generate_oid"></a>daos_obj_generate_oid</h3><ol>
+<li>输入：<ul>
+<li>daos_handle_t oh ： 存储了一个unsigned int 64的cookie</li>
+<li>daos_obj_id_t  oid : daos object id, 用两个64位int 存储 lo（low）和 high （high）</li>
+<li>enum DAOS_OT_KV_HASHED :  flat KV (no akey) with integer dkey </li>
+<li>OC_SX ：OC策略</li>
+<li>0 ：边长参数</li>
+<li>0 ：变长参数</li>
+</ul>
+</li>
+<li>实现，内部调用了<code>daos_obj_generate_oid2</code><ul>
+<li>输入：<ul>
+<li>daos_handle_t</li>
+<li>daos_obj_id_t</li>
+<li>daos_otype_t</li>
+<li>daos_oclass_id_t ： object class id， 32位int</li>
+<li>daos_oclass_hints_t  ：object class hint， 16位int</li>
+<li>args : 其他int参数</li>
+</ul>
+</li>
+<li>dc_cont_hdl2pool_hdl<ul>
+<li>根据cookie获取pool handler</li>
+</ul>
+</li>
+<li>rc = pl_map_query(pool-&gt;dp_pool, &amp;attr)</li>
+<li>dc_pool_put(struct dc_pool *pool) // 将pool-&gt;dp_hlink放入了一个双向队列中？</li>
+<li>按照选定的OC策略做相应的操作</li>
+<li>daos_obj_set_oid(oid, type, ord, nr_grp, args); // 就生成好了？</li>
+</ul>
+</li>
+</ol>
+<h3 id="daos-kv-open"><a href="#daos-kv-open" class="headerlink" title="daos_kv_open"></a>daos_kv_open</h3><ol>
+<li>输入：<ul>
+<li>daos_handle_t</li>
+<li>daos_obj_id_t</li>
+<li>mode : int 类型</li>
+<li>daos_handle_t</li>
+<li>daos_event_t : event and event queue, maybe used for debug</li>
+</ul>
+</li>
+<li>调用<code>rc = dc_task_create(dc_kv_open, NULL, ev, &amp;task)</code><ul>
+<li>将参数包装成dc_kv_open结构体</li>
+<li>生成一个kvOpen的task并调度</li>
+</ul>
+</li>
+</ol>
+<h3 id="dts-buf-render-buf-BUFLEN"><a href="#dts-buf-render-buf-BUFLEN" class="headerlink" title="dts_buf_render(buf, BUFLEN)"></a>dts_buf_render(buf, BUFLEN)</h3><ol>
+<li>输入buf和len</li>
+<li>利用随机生成的字符填满buf</li>
+</ol>
+<h3 id="daos-kev-put"><a href="#daos-kev-put" class="headerlink" title="daos_kev_put"></a>daos_kev_put</h3><ol>
+<li>输入：<ul>
+<li>daos_handle_t oh</li>
+<li>daos_handle_t th</li>
+<li>uint64_t flag</li>
+<li>char * key</li>
+<li>daos_size_t buf_size</li>
+<li>void * buf</li>
+<li>daos_event_t * ev</li>
+</ul>
+</li>
+<li>调用rc = dc_task_create(dc_kv_put, NULL, ev, &amp;task);</li>
+<li>将参数包装到task的args中</li>
+<li>调用dc_task_schedule(task, true);<ol>
+<li>task_is_valid(task)</li>
+<li>ev = task_ptr2args(task)-&gt;ta_ev;</li>
+<li>rc = daos_event_launch(ev);<ul>
+<li>输入：daos_event *ev</li>
+</ul>
+</li>
+<li>rc = tse_task_schedule(task, instant);</li>
+</ol>
+</li>
+</ol>
+<h2 id="kv-update"><a href="#kv-update" class="headerlink" title="kv_update"></a>kv_update</h2><ol>
+<li><p>daos_io_0线程接收到io请求，crt_handle_rpc(void *arg)处理rpc</p>
+</li>
+<li><p>ds_obj_rw_handler(crt_rpc_t *rpc)处理rpc</p>
+<ul>
+<li><p>obj_ioc_begin(orw-&gt;orw_oid.id_pub, orw-&gt;orw_map_ver,</p>
+<p>​               orw-&gt;orw_pool_uuid, orw-&gt;orw_co_hdl,</p>
+<p>​               orw-&gt;orw_co_uuid, opc_get(rpc-&gt;cr_opc),</p>
+<p>​               orw-&gt;orw_flags, &amp;ioc); // various check before access VOS</p>
+</li>
+</ul>
+</li>
+<li><p>​    rc = process_epoch(&amp;orw-&gt;orw_epoch, &amp;orw-&gt;orw_epoch_first,</p>
+<p>​               &amp;orw-&gt;orw_flags); // 处理epoch相关</p>
+</li>
+</ol>
+<h2 id="Object-Update"><a href="#Object-Update" class="headerlink" title="Object_Update"></a>Object_Update</h2><ol>
+<li><p>callstack</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">libvos_srv.so!dkey_update(<span class="keyword">daos_key_t</span> * dkey, <span class="keyword">uint32_t</span> pm_ver, struct vos_io_context * ioc) (/home/kuhan/daos/src/vos/vos_io.c:<span class="number">1803</span>)</span><br><span class="line">libvos_srv.so!vos_update_end(<span class="keyword">daos_handle_t</span> ioh, <span class="keyword">uint32_t</span> pm_ver, <span class="keyword">daos_key_t</span> * dkey, <span class="keyword">int</span> err, <span class="keyword">daos_size_t</span> * size, struct dtx_handle * dth) (/home/kuhan/daos/src/vos/vos_io.c:<span class="number">2278</span>)</span><br><span class="line">libobj.so!obj_rw_complete(struct dtx_handle * dth, <span class="keyword">int</span> status, <span class="keyword">daos_handle_t</span> ioh, struct obj_io_context * ioc, <span class="keyword">crt_rpc_t</span> * rpc) (/home/kuhan/daos/src/object/srv_obj.c:<span class="number">128</span>)</span><br><span class="line">libobj.so!obj_local_rw_internal(struct dtx_handle * dth, <span class="keyword">uint64_t</span> * split_offs, struct dcs_iod_csums * split_csums, <span class="keyword">daos_iod_t</span> * split_iods, struct obj_io_context * ioc, <span class="keyword">crt_rpc_t</span> * rpc) (/home/kuhan/daos/src/object/srv_obj.c:<span class="number">1677</span>)</span><br><span class="line">libobj.so!obj_local_rw(<span class="keyword">crt_rpc_t</span> * rpc, struct obj_io_context * ioc, <span class="keyword">daos_iod_t</span> * split_iods, struct dcs_iod_csums * split_csums, <span class="keyword">uint64_t</span> * split_offs, struct dtx_handle * dth, <span class="built_in">_Bool</span> pin) (/home/kuhan/daos/src/object/srv_obj.c:<span class="number">1697</span>)</span><br><span class="line">libobj.so!obj_tgt_update(<span class="keyword">dtx_sub_comp_cb_t</span> comp_cb, <span class="keyword">void</span> * arg, struct dtx_leader_handle * dlh) (/home/kuhan/daos/src/object/srv_obj.c:<span class="number">2425</span>)</span><br><span class="line">libobj.so!obj_tgt_update(struct dtx_leader_handle * dlh, <span class="keyword">void</span> * arg, <span class="keyword">int</span> idx, <span class="keyword">dtx_sub_comp_cb_t</span> comp_cb) (/home/kuhan/daos/src/object/srv_obj.c:<span class="number">2356</span>)</span><br><span class="line">libobj.so!ds_obj_rw_handler(<span class="keyword">crt_rpc_t</span> * rpc) (/home/kuhan/daos/src/object/srv_obj.c:<span class="number">2664</span>)</span><br><span class="line">libcart.so<span class="number">.4</span>!crt_handle_rpc(<span class="keyword">void</span> * arg) (/home/kuhan/daos/src/cart/crt_rpc.c:<span class="number">1638</span>)</span><br><span class="line">libabt.so<span class="number">.1</span>!ABTD_ythread_func_wrapper (未知源:<span class="number">0</span>)</span><br><span class="line">libabt.so<span class="number">.1</span>!make_fcontext (未知源:<span class="number">0</span>)</span><br><span class="line">[Unknown/Just-In-Time compiled code] (未知源:<span class="number">0</span>)</span><br></pre></td></tr></table></figure></li>
+</ol>
+<h3 id="obj-local-rw-internal"><a href="#obj-local-rw-internal" class="headerlink" title="obj_local_rw_internal"></a>obj_local_rw_internal</h3><ol>
+<li><p>​        rc = vos_update_begin(ioc-&gt;ioc_vos_coh, orw-&gt;orw_oid,</p>
+<p>​                  orw-&gt;orw_epoch, cond_flags, dkey,</p>
+<p>​                  orw-&gt;orw_nr, iods, iod_csums,</p>
+<p>​                  ioc-&gt;ioc_coc-&gt;sc_props.dcp_dedup_size,</p>
+<p>​                  &amp;ioh, dth);</p>
+<ul>
+<li><p>rc = vos_check_akeys(iod_nr, iods);</p>
+</li>
+<li><p>vos_ioc_create</p>
+</li>
+<li><p> rc = vos_space_hold(vos_cont2pool(ioc-&gt;ic_cont), flags, dkey, iod_nr,</p>
+</li>
+</ul>
+<p>  ​                iods, iods_csums, &amp;ioc-&gt;ic_space_held[0]);</p>
+<ul>
+<li><p>rc = dkey_update_begin(ioc);</p>
+<ul>
+<li><p>循环rc = akey_update_begin(ioc);</p>
+<ul>
+<li><p>获取dcs_csum_info</p>
+</li>
+<li><p>获取daos_iod_t,1k</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">iod</span><br><span class="line"><span class="number">0x7f9a07a4dee0</span></span><br><span class="line">iod_name</span><br><span class="line">iod_type:DAOS_IOD_ARRAY</span><br><span class="line">iod_size:<span class="number">1</span></span><br><span class="line">iod_flags:<span class="number">0</span></span><br><span class="line">iod_nr:<span class="number">1</span></span><br><span class="line">iod_recxs:<span class="number">0x7f9a07e9fbf0</span></span><br><span class="line">rx_idx:<span class="number">0</span></span><br><span class="line">rx_nr:<span class="number">1024</span></span><br></pre></td></tr></table></figure></li>
+<li><p>for (i = 0; i &lt; iod-&gt;iod_nr; i++) //循环</p>
+<ul>
+<li><p>size = (iod-&gt;iod_type == DAOS_IOD_SINGLE) ? iod-&gt;iod_size :</p>
+<p>​                iod-&gt;iod_recxs[i].rx_nr * iod-&gt;iod_size; //获取size，1k–1024</p>
+</li>
+<li><p>media = vos_media_select(vos_cont2pool(ioc-&gt;ic_cont),</p>
+<p>​                     iod-&gt;iod_type, size); //决定往哪个media上写，0 –&gt; scm</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/*</span></span><br><span class="line"><span class="comment"> * A simple media selection policy embedded in VOS, which select media by</span></span><br><span class="line"><span class="comment"> * akey type and record size.</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">inline</span> <span class="keyword">uint16_t</span></span></span><br><span class="line"><span class="function"><span class="title">vos_media_select</span><span class="params">(struct vos_pool *pool, <span class="keyword">daos_iod_type_t</span> type, <span class="keyword">daos_size_t</span> size)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">	<span class="keyword">if</span> (pool-&gt;vp_vea_info == <span class="literal">NULL</span>)</span><br><span class="line">		<span class="keyword">return</span> DAOS_MEDIA_SCM;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">return</span> (size &gt;= VOS_BLK_SZ) ? DAOS_MEDIA_NVME : DAOS_MEDIA_SCM;</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">// 首先做特判</span></span><br><span class="line"><span class="comment">// 如果大于等于4k，写到NVME上，否则写到SCM</span></span><br></pre></td></tr></table></figure></li>
+<li><p>iod-&gt;iod_type<br>为 DAOS_IOD_ARRAY类型：</p>
+<ul>
+<li><p>rc = vos_reserve_recx(ioc, media, size, recx_csum, csum_len);</p>
+<ul>
+<li><p>为    struct bio_iov  biov 分配内存</p>
+</li>
+<li><p>rc = reserve_space(ioc, media, size, &amp;off);</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br></pre></td><td class="code"><pre><span class="line">oc</span><br><span class="line"><span class="number">0x7f9a0724ef00</span></span><br><span class="line">ic_ent_array_alloc</span><br><span class="line">ea_data</span><br><span class="line">ea_ents:<span class="number">0x0</span></span><br><span class="line">ea_ent_nr:<span class="number">0</span></span><br><span class="line">ea_size:<span class="number">0</span></span><br><span class="line">ea_max:<span class="number">0</span></span><br><span class="line">ea_inob:<span class="number">0</span></span><br><span class="line">ea_first_delete:<span class="number">0</span></span><br><span class="line">ea_delete_nr:<span class="number">0</span></span><br><span class="line">ea_embedded_ents</span><br><span class="line">ea_embedded</span><br><span class="line">ic_ent_array:<span class="number">0x0</span></span><br><span class="line">ic_bound:<span class="number">509171074455830528</span></span><br><span class="line">ic_epr</span><br><span class="line">ic_oid</span><br><span class="line">ic_cont:<span class="number">0x7f9a07e9eb60</span></span><br><span class="line">ic_iods:<span class="number">0x7f9a07a4dee0</span></span><br><span class="line">iod_csums:<span class="number">0x0</span></span><br><span class="line">ic_obj:<span class="number">0x0</span></span><br><span class="line">ic_biod:<span class="number">0x7f99c89c63b0</span></span><br><span class="line">ic_ts_set:<span class="number">0x7f99c89c6f90</span></span><br><span class="line">ic_biov_csums:<span class="number">0x7f99c87c76e0</span></span><br><span class="line">ic_biov_csums_at:<span class="number">0</span></span><br><span class="line">ic_biov_csums_nr:<span class="number">1</span></span><br><span class="line">ic_dkey_info</span><br><span class="line">ic_akey_info</span><br><span class="line">ic_sgl_at:<span class="number">0</span></span><br><span class="line">ic_iov_at:<span class="number">0</span></span><br><span class="line">ic_rsrvd_scm:<span class="number">0x7f9a07e86980</span></span><br><span class="line">ic_umoffs:<span class="number">0x7f9a07e9e6a0</span></span><br><span class="line">ic_umoffs_cnt:<span class="number">0</span></span><br><span class="line">ic_umoffs_at:<span class="number">0</span></span><br><span class="line">  ic_blk_exts</span><br><span class="line">next:<span class="number">0x7f9a0724fb38</span></span><br><span class="line">prev:<span class="number">0x7f9a0724fb38</span></span><br><span class="line">ic_space_held</span><br><span class="line">ic_iod_nr:<span class="number">1</span></span><br><span class="line">ic_dedup_th:<span class="number">4096</span></span><br><span class="line">ic_dedup_entries</span><br><span class="line">ic_dedup_bsgls:<span class="number">0x0</span></span><br><span class="line">ic_dedup_bufs:<span class="number">0x0</span></span><br><span class="line">ic_io_size:<span class="number">0</span></span><br><span class="line">ic_update:<span class="number">1</span></span><br><span class="line">ic_size_fetch:<span class="number">0</span></span><br><span class="line">ic_save_recx:<span class="number">0</span></span><br><span class="line">ic_dedup:<span class="number">0</span></span><br><span class="line">ic_dedup_verify:<span class="number">0</span></span><br><span class="line">ic_read_ts_only:<span class="number">0</span></span><br><span class="line">ic_check_existence:<span class="number">0</span></span><br><span class="line">ic_remove:<span class="number">0</span></span><br><span class="line">ic_skip_fetch:<span class="number">0</span></span><br><span class="line">ic_ec:<span class="number">0</span></span><br><span class="line">ic_shadows:<span class="number">0x0</span></span><br><span class="line">re_nr</span><br><span class="line">re_total</span><br><span class="line">re_snapshot</span><br><span class="line">re_ep_valid</span><br><span class="line">re_items</span><br><span class="line">ic_recx_lists:<span class="number">0x0</span></span><br><span class="line">re_nr</span><br><span class="line">re_total</span><br><span class="line">re_snapshot</span><br><span class="line">re_ep_valid</span><br><span class="line">re_items</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>在SCM上申请内存</li>
+</ul>
+</li>
+<li><p>bio_addr_set(&amp;biov.bi_addr, media, off);//设置偏移量</p>
+</li>
+<li><p>bio_iov_set_len(&amp;biov, size); //设置长度</p>
+</li>
+<li><p>rc = iod_reserve(ioc, &amp;biov);</p>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><p>*ioh = vos_ioc2ioh(ioc); //获取cookie？</p>
+</li>
+</ul>
+</li>
+<li><p>biod = vos_ioh2desc(ioh); //获取io descriptor？</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line"><span class="number">0x7f99c89c63b0</span></span><br><span class="line">bd_ctxt:<span class="number">0x7f99c89b0650</span></span><br><span class="line">bic_link</span><br><span class="line">bic_umem:<span class="number">0x7f99c860ab58</span></span><br><span class="line">bic_pmempool_uuid:<span class="number">12137328209446634291</span></span><br><span class="line">bic_blob:<span class="number">0x7f99c89b1530</span></span><br><span class="line">bic_xs_ctxt:<span class="number">0x7f9a04427370</span></span><br><span class="line">bic_inflight_dmas:<span class="number">0</span></span><br><span class="line">bic_io_unit:<span class="number">4096</span></span><br><span class="line">bic_pool_id</span><br><span class="line">bic_opening:<span class="number">0</span></span><br><span class="line">bic_closing:<span class="number">0</span></span><br><span class="line">bd_rsrvd</span><br><span class="line">brd_regions:<span class="number">0x0</span></span><br><span class="line">brd_rg_max:<span class="number">0</span></span><br><span class="line">brd_rg_cnt:<span class="number">0</span></span><br><span class="line">brd_dma_chks:<span class="number">0x0</span></span><br><span class="line">brd_chk_max:<span class="number">0</span></span><br><span class="line">brd_chk_cnt:<span class="number">0</span></span><br><span class="line">bd_dma_done:<span class="number">0x10</span></span><br><span class="line">bd_inflights:<span class="number">0</span></span><br><span class="line">bd_result:<span class="number">0</span></span><br><span class="line">bd_chk_type:<span class="number">0</span></span><br><span class="line">bd_type:<span class="number">0</span></span><br><span class="line">bd_buffer_prep:<span class="number">0</span></span><br><span class="line">bd_dma_issued:<span class="number">0</span></span><br><span class="line">bd_retry:<span class="number">0</span></span><br><span class="line">bd_rdma:<span class="number">0</span></span><br><span class="line">bd_bulk_hdls:<span class="number">0x0</span></span><br><span class="line">bd_bulk_max:<span class="number">0</span></span><br><span class="line">bd_bulk_cnt:<span class="number">0</span></span><br><span class="line">bd_sgl_cnt:<span class="number">1</span></span><br><span class="line">bd_sgls</span><br></pre></td></tr></table></figure></li>
+<li><p>rc = bio_iod_prep(biod, BIO_CHK_TYPE_IO, rma ? rpc-&gt;cr_ctx : NULL,CRT_BULK_RW);</p>
+<ul>
+<li><p>rc = iterate_biov(biod, arg ? bulk_map_one : dma_map_one, arg);</p>
+<ul>
+<li><p>for循环：rc = cb_fn(biod, biov, data);  // 函数指针调用，此处写SCM</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br></pre></td><td class="code"><pre><span class="line">biod</span><br><span class="line"><span class="number">0x7f99c89c63b0</span></span><br><span class="line">bd_ctxt:<span class="number">0x7f99c89b0650</span></span><br><span class="line">bic_link</span><br><span class="line">bic_umem:<span class="number">0x7f99c860ab58</span></span><br><span class="line">bic_pmempool_uuid:<span class="number">12137328209446634291</span></span><br><span class="line">bic_blob:<span class="number">0x7f99c89b1530</span></span><br><span class="line">bic_xs_ctxt:<span class="number">0x7f9a04427370</span></span><br><span class="line">bic_inflight_dmas:<span class="number">0</span></span><br><span class="line">bic_io_unit:<span class="number">4096</span></span><br><span class="line">bic_pool_id</span><br><span class="line">bic_opening:<span class="number">0</span></span><br><span class="line">bic_closing:<span class="number">0</span></span><br><span class="line">bd_rsrvd</span><br><span class="line">bd_dma_done:<span class="number">0x10</span></span><br><span class="line">bd_inflights:<span class="number">0</span></span><br><span class="line">bd_result:<span class="number">0</span></span><br><span class="line">bd_chk_type:<span class="number">0</span></span><br><span class="line">bd_type:<span class="number">0</span></span><br><span class="line">bd_buffer_prep:<span class="number">0</span></span><br><span class="line">bd_dma_issued:<span class="number">0</span></span><br><span class="line">bd_retry:<span class="number">0</span></span><br><span class="line">bd_rdma:<span class="number">0</span></span><br><span class="line">bd_bulk_hdls:<span class="number">0x0</span></span><br><span class="line">bd_bulk_max:<span class="number">0</span></span><br><span class="line">bd_bulk_cnt:<span class="number">0</span></span><br><span class="line">bd_sgl_cnt:<span class="number">1</span></span><br><span class="line">bd_sgls</span><br><span class="line">--------------</span><br><span class="line">biov</span><br><span class="line"><span class="number">0x7f9a07e9eeb0</span></span><br><span class="line">bi_buf:<span class="number">0x0</span></span><br><span class="line">bi_data_len:<span class="number">1024</span></span><br><span class="line">bi_addr</span><br><span class="line">ba_off:<span class="number">4576720</span></span><br><span class="line">ba_type:<span class="number">0</span> <span class="string">&#x27;\000&#x27;</span></span><br><span class="line">ba_pad1:<span class="number">0</span> <span class="string">&#x27;\000&#x27;</span></span><br><span class="line">ba_flags:<span class="number">0</span></span><br><span class="line">ba_pad2:<span class="number">0</span></span><br><span class="line">bi_prefix_len:<span class="number">0</span></span><br><span class="line">bi_suffix_len:<span class="number">0</span></span><br><span class="line">--------------</span><br><span class="line">data</span><br><span class="line"><span class="number">0x0</span></span><br></pre></td></tr></table></figure>
+
+<p>函数指针调用dma_map_one(struct bio_desc *biod, struct bio_iov *biov, void *arg)</p>
+<p>// /* Convert offset of @biov into memory pointer */</p>
+<ul>
+<li>direct_scm_access(biod, biov):<ul>
+<li>bio_iov_set_raw_buf(biov,umem_off2ptr(umem, bio_iov2raw_off(biov)));</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><p>rc = bio_iod_copy(biod, orw-&gt;orw_sgls.ca_arrays, orw-&gt;orw_nr);</p>
+<ul>
+<li>将参数包装成bio_copy_args结构体</li>
+<li>iterate_biov(biod, copy_one, &amp;arg);</li>
+</ul>
+</li>
+<li><p>rc = vos_dedup_verify(ioh);</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/*</span></span><br><span class="line"><span class="comment"> * Check if the dedup data is identical to the RDMA data in a temporal</span></span><br><span class="line"><span class="comment"> * allocated DRAM extent, if memcmp fails, allocate a new SCM extent and</span></span><br><span class="line"><span class="comment"> * update it&#x27;s address in VOS tree, otherwise, keep using the original</span></span><br><span class="line"><span class="comment"> * dedup data address in VOS tree.</span></span><br><span class="line"><span class="comment"> */</span></span><br></pre></td></tr></table></figure></li>
+<li><p>rc = obj_verify_bio_csum(orw-&gt;orw_oid.id_pub, iods, iod_csums,biod, ioc-&gt;ioc_coc-&gt;sc_csummer,orw-&gt;orw_iod_array.oia_iod_nr); //verify CSUM</p>
+</li>
+<li><p>rc = obj_rw_complete(rpc, ioc, ioh, rc, dth); // the callstack is deep inside this function…</p>
+<ul>
+<li><p>rc = vos_update_end(ioh, ioc-&gt;ioc_map_ver,&amp;orwi-&gt;orw_dkey, status,&amp;ioc-&gt;ioc_io_size, dth);</p>
+<ul>
+<li><p>一些dtx commit逻辑？</p>
+</li>
+<li><p>err = dkey_update(ioc, pm_ver, dkey, dtx_is_valid_handle(dth) ? dth-&gt;dth_op_seq : VOS_SUB_OP_MAX); // update tree index</p>
+<ul>
+<li><p>rc = obj_tree_init(obj); // initialize tree for an object</p>
+</li>
+<li><p>rc = key_tree_prepare(obj, obj-&gt;obj_toh, VOS_BTR_DKEY, dkey,SUBTR_CREATE, DAOS_INTENT_UPDATE, &amp;krec, &amp;ak_toh,ioc-&gt;ic_ts_set);</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * Load the subtree roots embedded in the parent tree record.</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * akey tree	: all akeys under the same dkey</span></span><br><span class="line"><span class="comment"> * recx tree	: all record extents under the same akey, this function will</span></span><br><span class="line"><span class="comment"> *		  load both btree and evtree root.</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line">	<span class="comment">/* NB: In order to avoid complexities of passing parameters to the</span></span><br><span class="line"><span class="comment">	 * multi-nested tree, tree operations are not nested, instead:</span></span><br><span class="line"><span class="comment">	 *</span></span><br><span class="line"><span class="comment">	 * - In the case of fetch, we load the subtree root stored in the</span></span><br><span class="line"><span class="comment">	 *   parent tree leaf.</span></span><br><span class="line"><span class="comment">	 * - In the case of update/insert, we call dbtree_update() which may</span></span><br><span class="line"><span class="comment">	 *   create the root for the subtree, or just return it if it&#x27;s already</span></span><br><span class="line"><span class="comment">	 *   there.</span></span><br><span class="line"><span class="comment">	 */</span></span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><p>rc = dbtree_fetch(toh, BTR_PROBE_EQ, intent, key,NULL, &amp;riov);</p>
+</li>
+<li><p>/* use BTR_PROBE_BYPASS to avoid probe again */</p>
+<p>rc = dbtree_upsert(toh, BTR_PROBE_BYPASS, intent, key, &amp;riov);</p>
+<ul>
+<li><pre><code class="c">Update the value of the provided key, or insert it as a new key if
+ * there is no match.
+</code></pre>
+</li>
+<li><p>tcx = btr_hdl2tcx(toh); ///** find the tree context of the handle */</p>
+</li>
+<li><p>rc = btr_tx_begin(tcx); // begin transaction？</p>
+</li>
+<li><p>rc = btr_upsert(tcx, opc, intent, key, val);</p>
+<ul>
+<li>rc = btr_insert(tcx, key, val); // bypass策略，直接取前一次probe的结果，create a new record, insert it into tree leaf node.<ul>
+<li>btr_hkey_gen(tcx, key, &amp;rec-&gt;rec_hkey[0]); //生成hkey</li>
+<li>rc = btr_node_insert_rec(tcx, trace, rec);<ul>
+<li>btr_node_insert_rec_only(tcx, trace, rec);</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><p>btr_tx_end(tcx, rc);</p>
+<ul>
+<li>rc = umem_tx_commit(btr_umm(tcx));</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><p>vos_ilog_ts_ignore(vos_obj2umm(obj), &amp;krec-&gt;kr_ilog);</p>
+</li>
+<li><p>vos_ilog_ts_mark(ts_set, &amp;krec-&gt;kr_ilog);</p>
+</li>
+</ul>
+</li>
+<li><p>rc = vos_ilog_update(ioc-&gt;ic_cont, &amp;krec-&gt;kr_ilog, &amp;ioc-&gt;ic_epr,</p>
+<p>​                 ioc-&gt;ic_bound, &amp;obj-&gt;obj_ilog_info,</p>
+<p>​                 &amp;ioc-&gt;ic_dkey_info, update_cond, ioc-&gt;ic_ts_set); // update dkey log ？</p>
+</li>
+<li><p>for循环：rc = akey_update(ioc, pm_ver, ak_toh, minor_epc);</p>
+<ul>
+<li><p>​    rc = key_tree_prepare(obj, ak_toh, VOS_BTR_AKEY,</p>
+<p>​                  &amp;iod-&gt;iod_name, flags, DAOS_INTENT_UPDATE,</p>
+<p>​                  &amp;krec, &amp;toh, ioc-&gt;ic_ts_set);</p>
+</li>
+<li><p>….</p>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><p>vos_ts_set_check_conflict(ioc-&gt;ic_ts_set, ioc-&gt;ic_epr.epr_hi) // Now that we are past the existence checks, ensure there isn’t a read conflict</p>
+</li>
+<li><p>err = vos_tx_end(ioc-&gt;ic_cont, dth, &amp;ioc-&gt;ic_rsrvd_scm,&amp;ioc-&gt;ic_blk_exts, tx_started, err); // dtx operations，on scm</p>
+</li>
+<li><p>vos_ts_set_upgrade(ioc-&gt;ic_ts_set);</p>
+</li>
+<li><p>vos_space_unhold(vos_cont2pool(ioc-&gt;ic_cont), &amp;ioc-&gt;ic_space_held[0]);</p>
+</li>
+<li><p>vos_ioc_destroy(ioc, err != 0); // memory free</p>
+<ul>
+<li>bio_iod_free(ioc-&gt;ic_biod);</li>
+<li>vos_obj_release(vos_obj_cache_current(), ioc-&gt;ic_obj, evict);</li>
+<li>vos_ioc_reserve_fini(ioc);</li>
+<li>vos_ilog_fetch_finish(&amp;ioc-&gt;ic_dkey_info);</li>
+<li> vos_ilog_fetch_finish(&amp;ioc-&gt;ic_akey_info);</li>
+<li> vos_cont_decref(ioc-&gt;ic_cont);</li>
+<li>vos_ts_set_free(ioc-&gt;ic_ts_set);</li>
+<li>D_FREE(ioc);</li>
+</ul>
+</li>
+<li><p>vos_dth_set(NULL);</p>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ol>
+<h2 id="update流程"><a href="#update流程" class="headerlink" title="update流程"></a>update流程</h2><p>api调用–&gt;task generate –&gt; client rpc call –&gt; server accept –&gt; handle rpc –&gt; decide type –&gt; allocate memory –&gt; write data –&gt; update index –&gt; free memory</p>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
     <link itemprop="mainEntityOfPage" href="http://example.com/2022/01/04/Programming-language-GO-RUST/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -2991,7 +3336,7 @@ items[i][1] = 2
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">6</span>
+          <span class="site-state-item-count">7</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
