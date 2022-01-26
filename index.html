@@ -176,6 +176,81 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2022/01/26/Bloom-Filter/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Javie Chen">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Mars">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2022/01/26/Bloom-Filter/" class="post-title-link" itemprop="url">Bloom_Filter</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2022-01-26 17:13:33 / Modified: 17:13:58" itemprop="dateCreated datePublished" datetime="2022-01-26T17:13:33+08:00">2022-01-26</time>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="Bloom-Filter"><a href="#Bloom-Filter" class="headerlink" title="Bloom Filter"></a>Bloom Filter</h1><h2 id="作用"><a href="#作用" class="headerlink" title="作用"></a>作用</h2><p>可以告诉程序，某个值一定不存在或者可能存在。带有概率性的结论</p>
+<h2 id="优点"><a href="#优点" class="headerlink" title="优点"></a>优点</h2><p>高效、占用空间小</p>
+<h2 id="缺点"><a href="#缺点" class="headerlink" title="缺点"></a>缺点</h2><p>结论是概率性的，存在false positive的可能，即有个值实际上不存在，但是BF告诉我，值存在。</p>
+<h2 id="实现机制"><a href="#实现机制" class="headerlink" title="实现机制"></a>实现机制</h2><p><img src="https://tva1.sinaimg.cn/large/008i3skNgy1gyr6lp0apij30rl0g4aat.jpg" alt="image-20220126170232622"></p>
+<p>使用一个bitMap和若干个hash函数。</p>
+<ul>
+<li>put Key A：A key 进来时，使用提供的若干hash函数算的几个位置的值，将这些位置的值置为1。</li>
+<li>check key A existence: 检查A key是否存在，使用提供的若干hash函数算出若干index，检查这些index上的值是否都为1。<ul>
+<li>如果都为1：key A可能存在，因为存在其他key将key A的位置都置为了1的可能性</li>
+<li>如果有任何一个index上不为1：key A一定不存在</li>
+</ul>
+</li>
+</ul>
+<h2 id="使用场景："><a href="#使用场景：" class="headerlink" title="使用场景："></a>使用场景：</h2><ol>
+<li>利用BF减少磁盘IO或者网络请求，如果key不存在，则直接短路返回</li>
+<li>利用BF查找key是否存在，可能会返回错误的预判</li>
+</ol>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
     <link itemprop="mainEntityOfPage" href="http://example.com/2022/01/05/DAOS-simple-obj-example/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -3646,7 +3721,7 @@ items[i][1] = 2
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">7</span>
+          <span class="site-state-item-count">8</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
