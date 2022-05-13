@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 6.0.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="GDB单步跟踪123456789101112131415161718192021222324252627gdb + 可执行二进制程序r   + 参数列表b   + 断点行数bt 显示堆栈信息print 打印表达式值continue 在一个断点之后继续执行list 列出源码的一部分next 在停止之后单步执行set 设置变量的值step 进入函数调用watch 监视一个函数的值rwatch 监视变量">
+<meta property="og:type" content="article">
+<meta property="og:title" content="GDB_HELLO_WORLD">
+<meta property="og:url" content="http://example.com/2022/05/13/GDB-HELLO-WORLD/index.html">
+<meta property="og:site_name" content="Mars">
+<meta property="og:description" content="GDB单步跟踪123456789101112131415161718192021222324252627gdb + 可执行二进制程序r   + 参数列表b   + 断点行数bt 显示堆栈信息print 打印表达式值continue 在一个断点之后继续执行list 列出源码的一部分next 在停止之后单步执行set 设置变量的值step 进入函数调用watch 监视一个函数的值rwatch 监视变量">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2022-05-13T01:32:05.000Z">
+<meta property="article:modified_time" content="2022-05-13T01:34:20.375Z">
+<meta property="article:author" content="Javie Chen">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="http://example.com/2022/05/13/GDB-HELLO-WORLD/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'en'
+  };
+</script>
+
+  <title>GDB_HELLO_WORLD | Mars</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Mars</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">Make the world better place.</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+        <li class="menu-item menu-item-schedule">
+
+    <a href="/schedule/" rel="section"><i class="fa fa-calendar fa-fw"></i>Schedule</a>
+
+  </li>
+        <li class="menu-item menu-item-sitemap">
+
+    <a href="/sitemap.xml" rel="section"><i class="fa fa-sitemap fa-fw"></i>Sitemap</a>
+
+  </li>
+        <li class="menu-item menu-item-commonweal">
+
+    <a href="/404/" rel="section"><i class="fa fa-heartbeat fa-fw"></i>Commonweal 404</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2022/05/13/GDB-HELLO-WORLD/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Javie Chen">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Mars">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          GDB_HELLO_WORLD
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2022-05-13 09:32:05 / Modified: 09:34:20" itemprop="dateCreated datePublished" datetime="2022-05-13T09:32:05+08:00">2022-05-13</time>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h2 id="GDB单步跟踪"><a href="#GDB单步跟踪" class="headerlink" title="GDB单步跟踪"></a>GDB单步跟踪</h2><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line">gdb + 可执行二进制程序</span><br><span class="line">r   + 参数列表</span><br><span class="line">b   + 断点行数</span><br><span class="line">bt 显示堆栈信息</span><br><span class="line">print 打印表达式值</span><br><span class="line">continue 在一个断点之后继续执行</span><br><span class="line">list 列出源码的一部分</span><br><span class="line">next 在停止之后单步执行</span><br><span class="line">set 设置变量的值</span><br><span class="line">step 进入函数调用</span><br><span class="line">watch 监视一个函数的值</span><br><span class="line">rwatch 监视变量被读暂停程序</span><br><span class="line">awatch 监视变量被读写暂停程序</span><br><span class="line">disable 消除断点</span><br><span class="line">display 在断点停止的地方显示表达式的值</span><br><span class="line">enable 允许断点</span><br><span class="line">finish 继续执行直到函数返回</span><br><span class="line">ignore 忽略断点的次数</span><br><span class="line">info 查看信息</span><br><span class="line">load 动态加载程序到调试器</span><br><span class="line">whatis显示变量的值和类型</span><br><span class="line">ptype 显示变量的类型</span><br><span class="line">return 强制从当前函数返回</span><br><span class="line">make 不退出gdb即可重新产生可执行文件</span><br><span class="line">shel 不退出gdb即可执行linux shell命令</span><br><span class="line">help</span><br><span class="line">quit</span><br></pre></td></tr></table></figure>
+
+<h2 id="常用参数"><a href="#常用参数" class="headerlink" title="常用参数"></a>常用参数</h2><table>
+<thead>
+<tr>
+<th>参数</th>
+<th>解析</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>-e</td>
+<td>指定可执行文件名</td>
+</tr>
+<tr>
+<td>-c</td>
+<td>指定coredump文件</td>
+</tr>
+<tr>
+<td>-d</td>
+<td>指定目录加入到源文件搜索路径</td>
+</tr>
+<tr>
+<td>–cd</td>
+<td>指定目录作为路径运行gdb</td>
+</tr>
+<tr>
+<td>-s</td>
+<td>指定文件读取符号表</td>
+</tr>
+<tr>
+<td>-p</td>
+<td>指定attach进程</td>
+</tr>
+</tbody></table>
+<h2 id="调试进程"><a href="#调试进程" class="headerlink" title="调试进程"></a>调试进程</h2><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">gdb -p 进程名</span><br><span class="line">gdb attach 进程名</span><br></pre></td></tr></table></figure>
+
+<h2 id="调试线程"><a href="#调试线程" class="headerlink" title="调试线程"></a>调试线程</h2><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">info thread //列出已允许的进程下的线程</span><br><span class="line">thread 线程号 //切换到线程</span><br></pre></td></tr></table></figure>
+
+<h2 id="查看相关信息"><a href="#查看相关信息" class="headerlink" title="查看相关信息"></a>查看相关信息</h2><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">(gdb) info　　thread　　  //列出线程</span><br><span class="line">(gdb) info　　register　 //列出寄存器</span><br><span class="line">(gdb) info　　frame　   //列出栈帧</span><br><span class="line">(gdb) info　　files　　//列出当前文件</span><br><span class="line">(gdb) info　　share　 //列出当前共享库</span><br></pre></td></tr></table></figure>
+
+<h2 id="指定程序允许参数"><a href="#指定程序允许参数" class="headerlink" title="指定程序允许参数"></a>指定程序允许参数</h2><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">set args 1 2 3 4</span><br><span class="line">show args</span><br></pre></td></tr></table></figure>
+
+<h2 id="其他参数"><a href="#其他参数" class="headerlink" title="其他参数"></a>其他参数</h2><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">path 设定程序的允许路径</span><br><span class="line">show path</span><br><span class="line">set environment K=v 设置环境变量</span><br><span class="line">show environment 查看环境变量</span><br><span class="line">show language 查看语言环境</span><br><span class="line">info frame 查看函数的程序语言</span><br><span class="line">info source 查看当前文件的程序语言</span><br><span class="line">info breakpoints 显示所有断点</span><br><span class="line">info terminal 显示程序用到的终端模式</span><br></pre></td></tr></table></figure>
+
+<h2 id="添加断点"><a href="#添加断点" class="headerlink" title="添加断点"></a>添加断点</h2><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">break function 进入指定函数时停住</span><br><span class="line">break n 在指定行号停住</span><br><span class="line">break +offset / -offset 在行号后offset行停住或者前offset行停住</span><br><span class="line">break filename:linenum filename的linenum行停住</span><br><span class="line">break filename:function 同理</span><br><span class="line">break *address 在程序运行的内存地址处停住</span><br><span class="line">break 没有参数时表示在下一条指令处停住</span><br></pre></td></tr></table></figure>
+
+<h2 id="删除断点"><a href="#删除断点" class="headerlink" title="删除断点"></a>删除断点</h2><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">delte n 删除n号断点</span><br><span class="line">delte 删除所有断点</span><br><span class="line">clear 删除行n上面的所有断点</span><br></pre></td></tr></table></figure>
+
+<h2 id="程序调试"><a href="#程序调试" class="headerlink" title="程序调试"></a>程序调试</h2><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">run/r 程序执行直到遇到断点</span><br><span class="line">continue/c 程序执行直到遇到下个断点</span><br><span class="line">next/n 执行下条语句</span><br><span class="line">step/s 单步进入</span><br><span class="line">finish 跳出当前函数</span><br><span class="line">jump location 直到下一条语句的运行点</span><br><span class="line">print/p 输出变量值</span><br></pre></td></tr></table></figure>
+
+<h2 id="输出"><a href="#输出" class="headerlink" title="输出"></a>输出</h2><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">(gdb) print num</span><br><span class="line">(gdb) p num</span><br><span class="line">(gdb) print file::variable</span><br><span class="line">(gdb) print function::variable</span><br><span class="line">(gdb) p *array@len</span><br><span class="line"><span class="meta">$</span><span class="bash">1 = &#123;2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 32, 34, 36, 38, 40&#125;</span></span><br><span class="line"><span class="meta">#</span><span class="bash">静态数组直接<span class="built_in">print</span> + 数组名就可以打印内容</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="源代码显示"><a href="#源代码显示" class="headerlink" title="源代码显示"></a>源代码显示</h2><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">命令	解析</span><br><span class="line">list n	显示程序第n行的周围的源程序。</span><br><span class="line">list function	显示函数名为function的函数的源程序。</span><br><span class="line">list +n	显示当前行n后面的源程序。</span><br><span class="line">list -n	显示当前行n前面的源程序。</span><br><span class="line">set listsize	设置一次显示源代码的行数。</span><br><span class="line">show listsize	查看当前listsize的设置。</span><br><span class="line"><span class="meta">#</span><span class="bash"> 查看源代码的内存地址</span></span><br><span class="line">(gdb) info line tst.c:func</span><br><span class="line">Line 5 of &quot;tst.c&quot; starts at address 0x8048456 and ends at 0x804845d .</span><br></pre></td></tr></table></figure>
+
+<h2 id="查看内存地址保存的值"><a href="#查看内存地址保存的值" class="headerlink" title="查看内存地址保存的值"></a>查看内存地址保存的值</h2><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">你可以使用examine命令（简写是x）来查看内存地址中的值。x命令的语法如下所示：</span><br><span class="line"></span><br><span class="line">(gdb) x/nfu addr</span><br><span class="line">1</span><br><span class="line">n 是一个正整数，表示显示内存的长度，也就是说从当前地址向后显示几个地址的内容。</span><br><span class="line">f 表示显示的格式，参见上面。如果地址所指的是字符串，那么格式可以是s，如果地十是</span><br><span class="line">指令地址，那么格式可以是i。</span><br><span class="line">u 表示从当前地址往后请求的字节数，如果不指定的话，GDB默认是4个bytes。u参数可</span><br><span class="line">以用下面的字符来代替，b表示单字节，h表示双字节，w表示四字节，g表示八字节。当</span><br><span class="line">我们指定了字节长度后，GDB会从指内存定的内存地址开始，读写指定字节，并把其当作</span><br><span class="line">一个值取出来。</span><br><span class="line">addr表示一个内存地址。</span><br><span class="line">n/f/u三个参数可以一起使用。例如：</span><br><span class="line"></span><br><span class="line">(gdb) x/3uh 0x54320 //从内存地址0x54320读取内容，h表示以双字节为一个单位，3表示三个单位，u表示按十六进制显示。</span><br></pre></td></tr></table></figure>
+
+<h2 id="查看寄存器"><a href="#查看寄存器" class="headerlink" title="查看寄存器"></a>查看寄存器</h2><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">info registers</span><br><span class="line">info all-registers</span><br></pre></td></tr></table></figure>
+
+<h2 id="显示堆栈"><a href="#显示堆栈" class="headerlink" title="显示堆栈"></a>显示堆栈</h2><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">(gdb) backtrace [-full] [n]</span><br><span class="line">/*命令产生一张列表，包含着从最近的过程开始的所有有效过程和调用这些过程的参数。</span><br><span class="line">n：一个整数值，当为正整数时，表示打印最里层的 n 个栈帧的信息；n为负整数时，那么表示打印最外层n个栈帧的信息；</span><br><span class="line">-full：打印栈帧信息的同时，打印出局部变量的值</span><br><span class="line">注意，当调试多线程程序时，该命令仅用于打印当前线程中所有栈帧的信息。</span><br><span class="line">如果想要打印所有线程的栈帧信息，应执行thread apply all backtrace命令*/</span><br></pre></td></tr></table></figure>
+
+<h2 id="显示栈帧"><a href="#显示栈帧" class="headerlink" title="显示栈帧"></a>显示栈帧</h2><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line">frame 或 f 会打印出这些信息：栈的层编号，当前的函数名，函数参数值，函数所在文件及行号，函数执行到的语句。</span><br><span class="line">查看当前栈帧中存储的信息</span><br><span class="line"></span><br><span class="line">(gdb) info frame</span><br><span class="line">Stack level 0, frame at 0x7ffc1da10e80:</span><br><span class="line"> rip = 0x7f800008b4e3 in __epoll_wait_nocancel; saved rip = 0x5560eac8b902</span><br><span class="line"> called by frame at 0x7ffc1da11280</span><br><span class="line"> Arglist at 0x7ffc1da10e70, args:</span><br><span class="line"> Locals at 0x7ffc1da10e70, Previous frame&#x27;s sp is 0x7ffc1da10e80</span><br><span class="line"> Saved registers:</span><br><span class="line">  rip at 0x7ffc1da10e78</span><br><span class="line"></span><br><span class="line">该命令会依次打印出当前栈帧的如下信息：</span><br><span class="line">1、当前栈帧的编号，以及栈帧的地址；</span><br><span class="line">2、当前栈帧对应函数的存储地址，以及该函数被调用时的代码存储的地址</span><br><span class="line">3、当前函数的调用者，对应的栈帧的地址；</span><br><span class="line">4、编写此栈帧所用的编程语言；</span><br><span class="line">5、函数参数的存储地址以及值；</span><br><span class="line">6、函数中局部变量的存储地址；</span><br><span class="line">7、栈帧中存储的寄存器变量，例如指令寄存器（64位环境中用 rip 表示，32为环境中用eip 表示）、</span><br><span class="line">堆栈基指针寄存器（64位环境用 rbp表示，32位环境用 ebp表示）等。</span><br></pre></td></tr></table></figure>
+
+<h2 id="搜索源代码"><a href="#搜索源代码" class="headerlink" title="搜索源代码"></a>搜索源代码</h2><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">forward-search</span><br><span class="line">reverse-search</span><br></pre></td></tr></table></figure>
+
+<h2 id="设置观察点"><a href="#设置观察点" class="headerlink" title="设置观察点"></a>设置观察点</h2><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">watch 	为表达式(变量)expr设置一个观察点。一旦表达式值有变化时，马上停住程序</span><br><span class="line">(gdb) watch i != 10</span><br><span class="line">//这里，i != 10这个表达式一旦变化，则停住。watch &lt;expr&gt; 为表达式（变量）expr设置一个观察点。一量表达式值有变化时，马上停住程序(也是一种断点)。</span><br></pre></td></tr></table></figure>
+
+<h2 id="设置捕捉点"><a href="#设置捕捉点" class="headerlink" title="设置捕捉点"></a>设置捕捉点</h2><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">可设置捕捉点来补捉程序运行时的一些事件。如载入共享库(动态链接库)或是C++的异常。设置捕捉点的格式为：</span><br><span class="line">//catch 	当event发生时，停住程序</span><br><span class="line">(gdb) info catch</span><br><span class="line">//打印出当前的函数中的异常处理信息。</span><br><span class="line">(gdb) info locals</span><br><span class="line">//打印出当前函数中所有局部变量及其值。</span><br></pre></td></tr></table></figure>
+
+<h2 id="强制调用函数"><a href="#强制调用函数" class="headerlink" title="强制调用函数"></a>强制调用函数</h2><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">(gdb) call &lt;expr&gt;</span><br><span class="line">/*这里,&lt;expr&gt;可以是一个函数，这样就会返回函数的返回值，如果函数的返回类型是void那么就不会打印函数的返回值,但是实践发现，函数运行过程中的打印语句还是没有被打印出来。</span><br><span class="line">表达式中可以一是函数，以此达到强制调用函数的目的。并显示函数的返回值，如果函数返</span><br><span class="line">回值是void，那么就不显示。*/</span><br></pre></td></tr></table></figure>
+
+<h2 id="终止"><a href="#终止" class="headerlink" title="终止"></a>终止</h2><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">kill 终止正在调试的程序</span><br><span class="line">detach 将gdb和程序分离</span><br><span class="line">q 退出gdb</span><br></pre></td></tr></table></figure>
+
+<h2 id="打印美化"><a href="#打印美化" class="headerlink" title="打印美化"></a>打印美化</h2><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">set print pretty on</span><br></pre></td></tr></table></figure>
+
+
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2022/01/26/Bloom-Filter/" rel="prev" title="Bloom_Filter">
+      <i class="fa fa-chevron-left"></i> Bloom_Filter
+    </a></div>
+      <div class="post-nav-item"></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#GDB%E5%8D%95%E6%AD%A5%E8%B7%9F%E8%B8%AA"><span class="nav-number">1.</span> <span class="nav-text">GDB单步跟踪</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%B8%B8%E7%94%A8%E5%8F%82%E6%95%B0"><span class="nav-number">2.</span> <span class="nav-text">常用参数</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%B0%83%E8%AF%95%E8%BF%9B%E7%A8%8B"><span class="nav-number">3.</span> <span class="nav-text">调试进程</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%B0%83%E8%AF%95%E7%BA%BF%E7%A8%8B"><span class="nav-number">4.</span> <span class="nav-text">调试线程</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%9F%A5%E7%9C%8B%E7%9B%B8%E5%85%B3%E4%BF%A1%E6%81%AF"><span class="nav-number">5.</span> <span class="nav-text">查看相关信息</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%8C%87%E5%AE%9A%E7%A8%8B%E5%BA%8F%E5%85%81%E8%AE%B8%E5%8F%82%E6%95%B0"><span class="nav-number">6.</span> <span class="nav-text">指定程序允许参数</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%85%B6%E4%BB%96%E5%8F%82%E6%95%B0"><span class="nav-number">7.</span> <span class="nav-text">其他参数</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%B7%BB%E5%8A%A0%E6%96%AD%E7%82%B9"><span class="nav-number">8.</span> <span class="nav-text">添加断点</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%88%A0%E9%99%A4%E6%96%AD%E7%82%B9"><span class="nav-number">9.</span> <span class="nav-text">删除断点</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%A8%8B%E5%BA%8F%E8%B0%83%E8%AF%95"><span class="nav-number">10.</span> <span class="nav-text">程序调试</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%BE%93%E5%87%BA"><span class="nav-number">11.</span> <span class="nav-text">输出</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%BA%90%E4%BB%A3%E7%A0%81%E6%98%BE%E7%A4%BA"><span class="nav-number">12.</span> <span class="nav-text">源代码显示</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%9F%A5%E7%9C%8B%E5%86%85%E5%AD%98%E5%9C%B0%E5%9D%80%E4%BF%9D%E5%AD%98%E7%9A%84%E5%80%BC"><span class="nav-number">13.</span> <span class="nav-text">查看内存地址保存的值</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%9F%A5%E7%9C%8B%E5%AF%84%E5%AD%98%E5%99%A8"><span class="nav-number">14.</span> <span class="nav-text">查看寄存器</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%98%BE%E7%A4%BA%E5%A0%86%E6%A0%88"><span class="nav-number">15.</span> <span class="nav-text">显示堆栈</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%98%BE%E7%A4%BA%E6%A0%88%E5%B8%A7"><span class="nav-number">16.</span> <span class="nav-text">显示栈帧</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%90%9C%E7%B4%A2%E6%BA%90%E4%BB%A3%E7%A0%81"><span class="nav-number">17.</span> <span class="nav-text">搜索源代码</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%AE%BE%E7%BD%AE%E8%A7%82%E5%AF%9F%E7%82%B9"><span class="nav-number">18.</span> <span class="nav-text">设置观察点</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%AE%BE%E7%BD%AE%E6%8D%95%E6%8D%89%E7%82%B9"><span class="nav-number">19.</span> <span class="nav-text">设置捕捉点</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%BC%BA%E5%88%B6%E8%B0%83%E7%94%A8%E5%87%BD%E6%95%B0"><span class="nav-number">20.</span> <span class="nav-text">强制调用函数</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%BB%88%E6%AD%A2"><span class="nav-number">21.</span> <span class="nav-text">终止</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%89%93%E5%8D%B0%E7%BE%8E%E5%8C%96"><span class="nav-number">22.</span> <span class="nav-text">打印美化</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Javie Chen</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">9</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2022</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Javie Chen</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a>
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>
