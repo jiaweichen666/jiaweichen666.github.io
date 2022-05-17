@@ -20,21 +20,19 @@
     var CONFIG = {"hostname":"example.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
   </script>
 
-  <meta name="description" content="Bloom Filter作用可以告诉程序，某个值一定不存在或者可能存在。带有概率性的结论 优点高效、占用空间小 缺点结论是概率性的，存在false positive的可能，即有个值实际上不存在，但是BF告诉我，值存在。 实现机制 使用一个bitMap和若干个hash函数。  put Key A：A key 进来时，使用提供的若干hash函数算的几个位置的值，将这些位置的值置为1。 check ke">
+  <meta name="description" content="GCC hello_world将.c文件预处理成.i文件1gcc -E hello.c -o hello.i  此阶段称为预处理阶段。 将.i文件汇编成.s文件1gcc -S hello.i -o hello.s  此阶段为编译阶段，将预处理文件转为汇编代码文件。 将.s文件转变成.o机器码可执行文件1gcc -c hello.s -o hello.o  此阶段将汇编语言转变为二进制机器码。 使用">
 <meta property="og:type" content="article">
-<meta property="og:title" content="Bloom_Filter">
-<meta property="og:url" content="http://example.com/2022/01/26/Bloom-Filter/index.html">
+<meta property="og:title" content="gcc_hello_world">
+<meta property="og:url" content="http://example.com/2022/05/17/gcc-hello-world/index.html">
 <meta property="og:site_name" content="Mars">
-<meta property="og:description" content="Bloom Filter作用可以告诉程序，某个值一定不存在或者可能存在。带有概率性的结论 优点高效、占用空间小 缺点结论是概率性的，存在false positive的可能，即有个值实际上不存在，但是BF告诉我，值存在。 实现机制 使用一个bitMap和若干个hash函数。  put Key A：A key 进来时，使用提供的若干hash函数算的几个位置的值，将这些位置的值置为1。 check ke">
+<meta property="og:description" content="GCC hello_world将.c文件预处理成.i文件1gcc -E hello.c -o hello.i  此阶段称为预处理阶段。 将.i文件汇编成.s文件1gcc -S hello.i -o hello.s  此阶段为编译阶段，将预处理文件转为汇编代码文件。 将.s文件转变成.o机器码可执行文件1gcc -c hello.s -o hello.o  此阶段将汇编语言转变为二进制机器码。 使用">
 <meta property="og:locale" content="en_US">
-<meta property="og:image" content="https://tva1.sinaimg.cn/large/008i3skNgy1gyr6lp0apij30rl0g4aat.jpg">
-<meta property="article:published_time" content="2022-01-26T09:13:33.000Z">
-<meta property="article:modified_time" content="2022-01-26T09:13:58.683Z">
+<meta property="article:published_time" content="2022-05-17T08:24:10.000Z">
+<meta property="article:modified_time" content="2022-05-17T08:24:59.869Z">
 <meta property="article:author" content="Javie Chen">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="https://tva1.sinaimg.cn/large/008i3skNgy1gyr6lp0apij30rl0g4aat.jpg">
 
-<link rel="canonical" href="http://example.com/2022/01/26/Bloom-Filter/">
+<link rel="canonical" href="http://example.com/2022/05/17/gcc-hello-world/">
 
 
 <script id="page-configurations">
@@ -47,7 +45,7 @@
   };
 </script>
 
-  <title>Bloom_Filter | Mars</title>
+  <title>gcc_hello_world | Mars</title>
   
 
 
@@ -183,7 +181,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
-    <link itemprop="mainEntityOfPage" href="http://example.com/2022/01/26/Bloom-Filter/">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2022/05/17/gcc-hello-world/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.gif">
@@ -196,7 +194,7 @@
     </span>
       <header class="post-header">
         <h1 class="post-title" itemprop="name headline">
-          Bloom_Filter
+          gcc_hello_world
         </h1>
 
         <div class="post-meta">
@@ -207,7 +205,7 @@
               <span class="post-meta-item-text">Posted on</span>
               
 
-              <time title="Created: 2022-01-26 17:13:33 / Modified: 17:13:58" itemprop="dateCreated datePublished" datetime="2022-01-26T17:13:33+08:00">2022-01-26</time>
+              <time title="Created: 2022-05-17 16:24:10 / Modified: 16:24:59" itemprop="dateCreated datePublished" datetime="2022-05-17T16:24:10+08:00">2022-05-17</time>
             </span>
 
           
@@ -221,23 +219,107 @@
     <div class="post-body" itemprop="articleBody">
 
       
-        <h1 id="Bloom-Filter"><a href="#Bloom-Filter" class="headerlink" title="Bloom Filter"></a>Bloom Filter</h1><h2 id="作用"><a href="#作用" class="headerlink" title="作用"></a>作用</h2><p>可以告诉程序，某个值一定不存在或者可能存在。带有概率性的结论</p>
-<h2 id="优点"><a href="#优点" class="headerlink" title="优点"></a>优点</h2><p>高效、占用空间小</p>
-<h2 id="缺点"><a href="#缺点" class="headerlink" title="缺点"></a>缺点</h2><p>结论是概率性的，存在false positive的可能，即有个值实际上不存在，但是BF告诉我，值存在。</p>
-<h2 id="实现机制"><a href="#实现机制" class="headerlink" title="实现机制"></a>实现机制</h2><p><img src="https://tva1.sinaimg.cn/large/008i3skNgy1gyr6lp0apij30rl0g4aat.jpg" alt="image-20220126170232622"></p>
-<p>使用一个bitMap和若干个hash函数。</p>
-<ul>
-<li>put Key A：A key 进来时，使用提供的若干hash函数算的几个位置的值，将这些位置的值置为1。</li>
-<li>check key A existence: 检查A key是否存在，使用提供的若干hash函数算出若干index，检查这些index上的值是否都为1。<ul>
-<li>如果都为1：key A可能存在，因为存在其他key将key A的位置都置为了1的可能性</li>
-<li>如果有任何一个index上不为1：key A一定不存在</li>
-</ul>
-</li>
-</ul>
-<h2 id="使用场景："><a href="#使用场景：" class="headerlink" title="使用场景："></a>使用场景：</h2><ol>
-<li>利用BF减少磁盘IO或者网络请求，如果key不存在，则直接短路返回</li>
-<li>利用BF查找key是否存在，可能会返回错误的预判</li>
-</ol>
+        <h1 id="GCC-hello-world"><a href="#GCC-hello-world" class="headerlink" title="GCC hello_world"></a>GCC hello_world</h1><h2 id="将-c文件预处理成-i文件"><a href="#将-c文件预处理成-i文件" class="headerlink" title="将.c文件预处理成.i文件"></a>将.c文件预处理成.i文件</h2><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">gcc -E hello.c -o hello.i</span><br></pre></td></tr></table></figure>
+
+<p>此阶段称为预处理阶段。</p>
+<h2 id="将-i文件汇编成-s文件"><a href="#将-i文件汇编成-s文件" class="headerlink" title="将.i文件汇编成.s文件"></a>将.i文件汇编成.s文件</h2><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">gcc -S hello.i -o hello.s</span><br></pre></td></tr></table></figure>
+
+<p>此阶段为编译阶段，将预处理文件转为汇编代码文件。</p>
+<h2 id="将-s文件转变成-o机器码可执行文件"><a href="#将-s文件转变成-o机器码可执行文件" class="headerlink" title="将.s文件转变成.o机器码可执行文件"></a>将.s文件转变成.o机器码可执行文件</h2><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">gcc -c hello.s -o hello.o</span><br></pre></td></tr></table></figure>
+
+<p>此阶段将汇编语言转变为二进制机器码。</p>
+<h3 id="使用readelf查看二进制文件"><a href="#使用readelf查看二进制文件" class="headerlink" title="使用readelf查看二进制文件"></a>使用readelf查看二进制文件</h3><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">readelf -a hello.o</span><br></pre></td></tr></table></figure>
+
+<h2 id="将-o可执行文件链接成最终可执行程序"><a href="#将-o可执行文件链接成最终可执行程序" class="headerlink" title="将.o可执行文件链接成最终可执行程序"></a>将.o可执行文件链接成最终可执行程序</h2><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"><span class="comment"># 动态链接</span></span></span><br><span class="line">gcc hello.c -o hello</span><br><span class="line"><span class="meta">#</span><span class="bash"><span class="comment"># 静态链接</span></span></span><br><span class="line">gcc hello.c -o hello --static</span><br></pre></td></tr></table></figure>
+
+<h1 id="可选参数"><a href="#可选参数" class="headerlink" title="可选参数"></a>可选参数</h1><h2 id="参数列表"><a href="#参数列表" class="headerlink" title="参数列表"></a>参数列表</h2><table>
+<thead>
+<tr>
+<th align="left">选项</th>
+<th align="left">解释</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left">-ansi</td>
+<td align="left">只支持 ANSI 标准的 C 语法。这一选项将禁止 GNU C 的某些特色， 例如 asm 或 typeof 关键词。</td>
+</tr>
+<tr>
+<td align="left">-c</td>
+<td align="left">只编译并生成目标文件。</td>
+</tr>
+<tr>
+<td align="left">-DMACRO</td>
+<td align="left">以字符串”1”定义 MACRO 宏。</td>
+</tr>
+<tr>
+<td align="left">-DMACRO=DEFN</td>
+<td align="left">以字符串”DEFN”定义 MACRO 宏。</td>
+</tr>
+<tr>
+<td align="left">-E</td>
+<td align="left">只运行 C 预编译器。</td>
+</tr>
+<tr>
+<td align="left">-g</td>
+<td align="left">生成调试信息。GNU 调试器可利用该信息。</td>
+</tr>
+<tr>
+<td align="left">-IDIRECTORY</td>
+<td align="left">指定额外的头文件搜索路径DIRECTORY。</td>
+</tr>
+<tr>
+<td align="left">-LDIRECTORY</td>
+<td align="left">指定额外的函数库搜索路径DIRECTORY。</td>
+</tr>
+<tr>
+<td align="left">-lLIBRARY</td>
+<td align="left">连接时搜索指定的函数库LIBRARY。</td>
+</tr>
+<tr>
+<td align="left">-m486</td>
+<td align="left">针对 486 进行代码优化。</td>
+</tr>
+<tr>
+<td align="left">-o FILE</td>
+<td align="left">生成指定的输出文件。用在生成可执行文件时。</td>
+</tr>
+<tr>
+<td align="left">-O0</td>
+<td align="left">不进行优化处理。</td>
+</tr>
+<tr>
+<td align="left">-O 或 -O1</td>
+<td align="left">优化生成代码。</td>
+</tr>
+<tr>
+<td align="left">-O2</td>
+<td align="left">进一步优化。</td>
+</tr>
+<tr>
+<td align="left">-O3</td>
+<td align="left">比 -O2 更进一步优化，包括 inline 函数。</td>
+</tr>
+<tr>
+<td align="left">-shared</td>
+<td align="left">生成共享目标文件。通常用在建立共享库时。</td>
+</tr>
+<tr>
+<td align="left">-static</td>
+<td align="left">禁止使用共享连接。</td>
+</tr>
+<tr>
+<td align="left">-UMACRO</td>
+<td align="left">取消对 MACRO 宏的定义。</td>
+</tr>
+<tr>
+<td align="left">-w</td>
+<td align="left">不生成任何警告信息。</td>
+</tr>
+<tr>
+<td align="left">-Wall</td>
+<td align="left">生成所有警告信息。</td>
+</tr>
+</tbody></table>
 
     </div>
 
@@ -253,13 +335,10 @@
         
     <div class="post-nav">
       <div class="post-nav-item">
-    <a href="/2022/01/05/DAOS-simple-obj-example/" rel="prev" title="">
-      <i class="fa fa-chevron-left"></i> 
+    <a href="/2022/05/13/GDB-HELLO-WORLD/" rel="prev" title="GDB_HELLO_WORLD">
+      <i class="fa fa-chevron-left"></i> GDB_HELLO_WORLD
     </a></div>
-      <div class="post-nav-item">
-    <a href="/2022/05/13/GDB-HELLO-WORLD/" rel="next" title="GDB_HELLO_WORLD">
-      GDB_HELLO_WORLD <i class="fa fa-chevron-right"></i>
-    </a></div>
+      <div class="post-nav-item"></div>
     </div>
       </footer>
     
@@ -318,7 +397,7 @@
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#Bloom-Filter"><span class="nav-number">1.</span> <span class="nav-text">Bloom Filter</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BD%9C%E7%94%A8"><span class="nav-number">1.1.</span> <span class="nav-text">作用</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BC%98%E7%82%B9"><span class="nav-number">1.2.</span> <span class="nav-text">优点</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%BC%BA%E7%82%B9"><span class="nav-number">1.3.</span> <span class="nav-text">缺点</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%AE%9E%E7%8E%B0%E6%9C%BA%E5%88%B6"><span class="nav-number">1.4.</span> <span class="nav-text">实现机制</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BD%BF%E7%94%A8%E5%9C%BA%E6%99%AF%EF%BC%9A"><span class="nav-number">1.5.</span> <span class="nav-text">使用场景：</span></a></li></ol></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#GCC-hello-world"><span class="nav-number">1.</span> <span class="nav-text">GCC hello_world</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%B0%86-c%E6%96%87%E4%BB%B6%E9%A2%84%E5%A4%84%E7%90%86%E6%88%90-i%E6%96%87%E4%BB%B6"><span class="nav-number">1.1.</span> <span class="nav-text">将.c文件预处理成.i文件</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%B0%86-i%E6%96%87%E4%BB%B6%E6%B1%87%E7%BC%96%E6%88%90-s%E6%96%87%E4%BB%B6"><span class="nav-number">1.2.</span> <span class="nav-text">将.i文件汇编成.s文件</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%B0%86-s%E6%96%87%E4%BB%B6%E8%BD%AC%E5%8F%98%E6%88%90-o%E6%9C%BA%E5%99%A8%E7%A0%81%E5%8F%AF%E6%89%A7%E8%A1%8C%E6%96%87%E4%BB%B6"><span class="nav-number">1.3.</span> <span class="nav-text">将.s文件转变成.o机器码可执行文件</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BD%BF%E7%94%A8readelf%E6%9F%A5%E7%9C%8B%E4%BA%8C%E8%BF%9B%E5%88%B6%E6%96%87%E4%BB%B6"><span class="nav-number">1.3.1.</span> <span class="nav-text">使用readelf查看二进制文件</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%B0%86-o%E5%8F%AF%E6%89%A7%E8%A1%8C%E6%96%87%E4%BB%B6%E9%93%BE%E6%8E%A5%E6%88%90%E6%9C%80%E7%BB%88%E5%8F%AF%E6%89%A7%E8%A1%8C%E7%A8%8B%E5%BA%8F"><span class="nav-number">1.4.</span> <span class="nav-text">将.o可执行文件链接成最终可执行程序</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%8F%AF%E9%80%89%E5%8F%82%E6%95%B0"><span class="nav-number">2.</span> <span class="nav-text">可选参数</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8F%82%E6%95%B0%E5%88%97%E8%A1%A8"><span class="nav-number">2.1.</span> <span class="nav-text">参数列表</span></a></li></ol></li></ol></div>
       </div>
       <!--/noindex-->
 

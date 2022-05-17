@@ -176,6 +176,165 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2022/05/17/gcc-hello-world/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Javie Chen">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Mars">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2022/05/17/gcc-hello-world/" class="post-title-link" itemprop="url">gcc_hello_world</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2022-05-17 16:24:10 / Modified: 16:24:59" itemprop="dateCreated datePublished" datetime="2022-05-17T16:24:10+08:00">2022-05-17</time>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="GCC-hello-world"><a href="#GCC-hello-world" class="headerlink" title="GCC hello_world"></a>GCC hello_world</h1><h2 id="将-c文件预处理成-i文件"><a href="#将-c文件预处理成-i文件" class="headerlink" title="将.c文件预处理成.i文件"></a>将.c文件预处理成.i文件</h2><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">gcc -E hello.c -o hello.i</span><br></pre></td></tr></table></figure>
+
+<p>此阶段称为预处理阶段。</p>
+<h2 id="将-i文件汇编成-s文件"><a href="#将-i文件汇编成-s文件" class="headerlink" title="将.i文件汇编成.s文件"></a>将.i文件汇编成.s文件</h2><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">gcc -S hello.i -o hello.s</span><br></pre></td></tr></table></figure>
+
+<p>此阶段为编译阶段，将预处理文件转为汇编代码文件。</p>
+<h2 id="将-s文件转变成-o机器码可执行文件"><a href="#将-s文件转变成-o机器码可执行文件" class="headerlink" title="将.s文件转变成.o机器码可执行文件"></a>将.s文件转变成.o机器码可执行文件</h2><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">gcc -c hello.s -o hello.o</span><br></pre></td></tr></table></figure>
+
+<p>此阶段将汇编语言转变为二进制机器码。</p>
+<h3 id="使用readelf查看二进制文件"><a href="#使用readelf查看二进制文件" class="headerlink" title="使用readelf查看二进制文件"></a>使用readelf查看二进制文件</h3><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">readelf -a hello.o</span><br></pre></td></tr></table></figure>
+
+<h2 id="将-o可执行文件链接成最终可执行程序"><a href="#将-o可执行文件链接成最终可执行程序" class="headerlink" title="将.o可执行文件链接成最终可执行程序"></a>将.o可执行文件链接成最终可执行程序</h2><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"><span class="comment"># 动态链接</span></span></span><br><span class="line">gcc hello.c -o hello</span><br><span class="line"><span class="meta">#</span><span class="bash"><span class="comment"># 静态链接</span></span></span><br><span class="line">gcc hello.c -o hello --static</span><br></pre></td></tr></table></figure>
+
+<h1 id="可选参数"><a href="#可选参数" class="headerlink" title="可选参数"></a>可选参数</h1><h2 id="参数列表"><a href="#参数列表" class="headerlink" title="参数列表"></a>参数列表</h2><table>
+<thead>
+<tr>
+<th align="left">选项</th>
+<th align="left">解释</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left">-ansi</td>
+<td align="left">只支持 ANSI 标准的 C 语法。这一选项将禁止 GNU C 的某些特色， 例如 asm 或 typeof 关键词。</td>
+</tr>
+<tr>
+<td align="left">-c</td>
+<td align="left">只编译并生成目标文件。</td>
+</tr>
+<tr>
+<td align="left">-DMACRO</td>
+<td align="left">以字符串”1”定义 MACRO 宏。</td>
+</tr>
+<tr>
+<td align="left">-DMACRO=DEFN</td>
+<td align="left">以字符串”DEFN”定义 MACRO 宏。</td>
+</tr>
+<tr>
+<td align="left">-E</td>
+<td align="left">只运行 C 预编译器。</td>
+</tr>
+<tr>
+<td align="left">-g</td>
+<td align="left">生成调试信息。GNU 调试器可利用该信息。</td>
+</tr>
+<tr>
+<td align="left">-IDIRECTORY</td>
+<td align="left">指定额外的头文件搜索路径DIRECTORY。</td>
+</tr>
+<tr>
+<td align="left">-LDIRECTORY</td>
+<td align="left">指定额外的函数库搜索路径DIRECTORY。</td>
+</tr>
+<tr>
+<td align="left">-lLIBRARY</td>
+<td align="left">连接时搜索指定的函数库LIBRARY。</td>
+</tr>
+<tr>
+<td align="left">-m486</td>
+<td align="left">针对 486 进行代码优化。</td>
+</tr>
+<tr>
+<td align="left">-o FILE</td>
+<td align="left">生成指定的输出文件。用在生成可执行文件时。</td>
+</tr>
+<tr>
+<td align="left">-O0</td>
+<td align="left">不进行优化处理。</td>
+</tr>
+<tr>
+<td align="left">-O 或 -O1</td>
+<td align="left">优化生成代码。</td>
+</tr>
+<tr>
+<td align="left">-O2</td>
+<td align="left">进一步优化。</td>
+</tr>
+<tr>
+<td align="left">-O3</td>
+<td align="left">比 -O2 更进一步优化，包括 inline 函数。</td>
+</tr>
+<tr>
+<td align="left">-shared</td>
+<td align="left">生成共享目标文件。通常用在建立共享库时。</td>
+</tr>
+<tr>
+<td align="left">-static</td>
+<td align="left">禁止使用共享连接。</td>
+</tr>
+<tr>
+<td align="left">-UMACRO</td>
+<td align="left">取消对 MACRO 宏的定义。</td>
+</tr>
+<tr>
+<td align="left">-w</td>
+<td align="left">不生成任何警告信息。</td>
+</tr>
+<tr>
+<td align="left">-Wall</td>
+<td align="left">生成所有警告信息。</td>
+</tr>
+</tbody></table>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
     <link itemprop="mainEntityOfPage" href="http://example.com/2022/05/13/GDB-HELLO-WORLD/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -3854,7 +4013,7 @@ items[i][1] = 2
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">9</span>
+          <span class="site-state-item-count">10</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
