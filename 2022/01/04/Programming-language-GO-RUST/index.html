@@ -1705,7 +1705,7 @@ items[i][1] = 2
 <ol>
 <li><p>In Rust, which uses the concept of ownership and borrowing, an additional difference between references and smart pointers is that the reference are pointers that only borrow data; in contrast, in many cases, smart pointers own the data they point to.</p>
 </li>
-<li><p>Using Box<T> to point to data on the heap</p>
+<li><p>Using Box<T> to point to data on the heap</T></p>
 <p>Boxes allow you to store data on the heap rather than the stack, what remains on the stack is the pointer to the heap data.</p>
 <ol>
 <li>Enabling recursive types with boxes</li>
@@ -1737,11 +1737,11 @@ items[i][1] = 2
 <p>Programmer do not have to free memory in code when finishing using an instance of a data type.In rust, when a value goes out of scope,the compiler will insert ‘free memory’ code automatically.</p>
 <p>Most of time, programmers do not have to drop memory of one instance before the scope ending, if have to, rust provides a method <code>std::mem::drop</code> to do this.</p>
 </li>
-<li><p>Rc<T>, the reference counted smart pointer</p>
+<li><p>Rc<T>, the reference counted smart pointer</T></p>
 <p>To enable multiple ownership, Rust has a type called <code>Rc&lt;T&gt;</code>, which is an abbreviation for <em>reference counting</em>. The <code>Rc&lt;T&gt;</code> type keeps track of the number of references to a value to determine whether or not the value is still in use. If there are zero references to a value, the value can be cleaned up without any references becoming invalid.</p>
 <p>We use the <code>Rc&lt;T&gt;</code> type when we want to allocate some data on the heap for multiple parts of our program to read and we can’t determine at compile time which part will finish using the data last. If we knew which part would finish last, we could just make that part the data’s owner, and the normal ownership rules enforced at compile time would take effect.</p>
 <figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">enum</span> <span class="title">List</span></span> &#123;</span><br><span class="line">    Cons(<span class="built_in">i32</span>, Rc&lt;List&gt;),</span><br><span class="line">    Nil,</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">use</span> crate::List::&#123;Cons, Nil&#125;;</span><br><span class="line"><span class="keyword">use</span> std::rc::Rc;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">fn</span> <span class="title">main</span></span>() &#123;</span><br><span class="line">    <span class="keyword">let</span> a = Rc::new(Cons(<span class="number">5</span>, Rc::new(Cons(<span class="number">10</span>, Rc::new(Nil)))));</span><br><span class="line">    <span class="keyword">let</span> b = Cons(<span class="number">3</span>, Rc::clone(&amp;a));</span><br><span class="line">    <span class="keyword">let</span> c = Cons(<span class="number">4</span>, Rc::clone(&amp;a));</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></li>
-<li><p>RefCell<T> and the interior mutability pattern </p>
+<li><p>RefCell<T> and the interior mutability pattern </T></p>
 <p>……..(TODO)</p>
 <p>reference:<a target="_blank" rel="noopener" href="https://doc.rust-lang.org/book/ch15-05-interior-mutability.html">https://doc.rust-lang.org/book/ch15-05-interior-mutability.html</a></p>
 </li>
@@ -1768,12 +1768,12 @@ items[i][1] = 2
         
     <div class="post-nav">
       <div class="post-nav-item">
-    <a href="/2022/01/04/Distributed-protocol/" rel="prev" title="Distributed protocol">
-      <i class="fa fa-chevron-left"></i> Distributed protocol
+    <a href="/2022/01/04/Linux%20core/" rel="prev" title="Something about linux core">
+      <i class="fa fa-chevron-left"></i> Something about linux core
     </a></div>
       <div class="post-nav-item">
-    <a href="/2022/01/04/Linux%20core/" rel="next" title="Something about linux core">
-      Something about linux core <i class="fa fa-chevron-right"></i>
+    <a href="/2022/01/04/Dkey-Array-Object-update/" rel="next" title="Dkey-Array Object update">
+      Dkey-Array Object update <i class="fa fa-chevron-right"></i>
     </a></div>
     </div>
       </footer>
@@ -1847,7 +1847,7 @@ items[i][1] = 2
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">9</span>
+          <span class="site-state-item-count">12</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
@@ -1860,7 +1860,7 @@ items[i][1] = 2
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">9</span>
+        <span class="site-state-item-count">11</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>

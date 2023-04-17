@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 6.0.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="分布式系统中的时间计算机系统中的时间，通过石英振荡器的震动次数来确定。一个石英振荡器的震动频率是32768Hz每秒，计算机电路根据石英晶体的震动次数来确定1s钟。但是石英晶体的震荡次数会因为环境产生误差。 计算机系统中，假设发生了事件A和事件B，如何确认时间A和事件B的先后顺序？  单机系统中，时间单调递增，假设时间A先于时间B发生，则一定意味着时间A发生时的时间戳小于事件B 分布式系统中，由于不">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Daos-mvcc-and-timestamp-ordering">
+<meta property="og:url" content="http://example.com/2023/03/29/Daos-mvcc-and-timestamp-ordering/index.html">
+<meta property="og:site_name" content="Saturn">
+<meta property="og:description" content="分布式系统中的时间计算机系统中的时间，通过石英振荡器的震动次数来确定。一个石英振荡器的震动频率是32768Hz每秒，计算机电路根据石英晶体的震动次数来确定1s钟。但是石英晶体的震荡次数会因为环境产生误差。 计算机系统中，假设发生了事件A和事件B，如何确认时间A和事件B的先后顺序？  单机系统中，时间单调递增，假设时间A先于时间B发生，则一定意味着时间A发生时的时间戳小于事件B 分布式系统中，由于不">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="http://example.com/2023/03/29/Daos-mvcc-and-timestamp-ordering/image-20230301140808905.png">
+<meta property="article:published_time" content="2023-03-29T07:31:36.000Z">
+<meta property="article:modified_time" content="2023-04-17T07:58:52.660Z">
+<meta property="article:author" content="Javie Chen">
+<meta property="article:tag" content="storage">
+<meta property="article:tag" content="DAOS">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://example.com/2023/03/29/Daos-mvcc-and-timestamp-ordering/image-20230301140808905.png">
+
+<link rel="canonical" href="http://example.com/2023/03/29/Daos-mvcc-and-timestamp-ordering/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'en'
+  };
+</script>
+
+  <title>Daos-mvcc-and-timestamp-ordering | Saturn</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Saturn</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">The devil is in the details.</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2023/03/29/Daos-mvcc-and-timestamp-ordering/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Javie Chen">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Saturn">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Daos-mvcc-and-timestamp-ordering
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2023-03-29 15:31:36" itemprop="dateCreated datePublished" datetime="2023-03-29T15:31:36+08:00">2023-03-29</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2023-04-17 15:58:52" itemprop="dateModified" datetime="2023-04-17T15:58:52+08:00">2023-04-17</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/knowledge/" itemprop="url" rel="index"><span itemprop="name">knowledge</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1 id="分布式系统中的时间"><a href="#分布式系统中的时间" class="headerlink" title="分布式系统中的时间"></a>分布式系统中的时间</h1><p>计算机系统中的时间，通过石英振荡器的震动次数来确定。一个石英振荡器的震动频率是32768Hz每秒，计算机电路根据石英晶体的震动次数来确定1s钟。但是石英晶体的震荡次数会因为环境产生误差。</p>
+<p>计算机系统中，假设发生了事件A和事件B，如何确认时间A和事件B的先后顺序？</p>
+<ol>
+<li>单机系统中，时间单调递增，假设时间A先于时间B发生，则一定意味着时间A发生时的时间戳小于事件B</li>
+<li>分布式系统中，由于不同机器上的时间存在误差，假设A在机器a上发生，B在机器b上发生，物理上，A在B之前发生，显然不能直接推导出T(A) &lt;T(B),因为A和B在两台不同的机器上获取了时间戳，参考系不一样。</li>
+</ol>
+<p>物理时钟，包括NTP协议和TrueTime都属于物理时钟，另一种是逻辑时钟，包括Lamport逻辑时钟和向量时钟。这两种时钟有各自的优缺点。物理时钟的优点在于直观，就是真实世界的时间，使用方便，缺点在于无法做到绝对精确，成本相对高一些。逻辑时钟的优点在于可以做到精确的因果关系，缺点在于节点之间需要通信，而且使用上不如物理时钟直观。</p>
+<h2 id="Network-Time-Protocol（NTP）"><a href="#Network-Time-Protocol（NTP）" class="headerlink" title="Network Time Protocol（NTP）"></a>Network Time Protocol（NTP）</h2><p>NTP协议的目标是将所有计算机的时间同步到几毫秒误差内。实际上广域网可以达到几十毫秒的误差，局域网误差可以在1毫秒内。</p>
+<ol>
+<li>客户端A发送NTP消息给服务器B，消息中包含发送时间戳 T1</li>
+<li>服务器B收到NTP消息后，将接收时间 T2 写入消息中</li>
+<li>服务器B发送该NTP消息给客户端A，发送时间 T3 写入消息中</li>
+<li>客户端A收到该NTP消息的时间为 T4</li>
+</ol>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">         T1    T2`           T3`   T4</span><br><span class="line">A    -----------------------------^-----</span><br><span class="line">          \    |             |    /</span><br><span class="line">           \   |             |   /</span><br><span class="line">            \  |             |  /</span><br><span class="line">             \ |             | /</span><br><span class="line">              \|             |/</span><br><span class="line">B    ----------v-------------------------</span><br><span class="line">               T2            T3</span><br></pre></td></tr></table></figure>
+
+<p>AB之间的网络往返时间RTT(Round Trip Time)：δ = (T4 - T1) - (T3 - T2)</p>
+<p>AB之间的时间偏移：θ = ( (T2 - T1) + (T3 - T4) ) / 2</p>
+<p>A从发送请求消息到收到响应的时间间隔是 T4 - T1，其中 T3 - T2 是B的处理时间，所以网络往返时间</p>
+<p>δ = (T4 - T1) - (T3 - T2)。</p>
+<p>假设A和B的时间偏差为θ，那么 T3 - θ = T3`。</p>
+<p>T4和T3’的间隔是半个RTT：T4 - T3` = δ / 2</p>
+<p>把T3`和δ代入上面这个等式，得到：θ = ( (T2 - T1) + (T3 - T4) ) / 2。</p>
+<p>NTP协议在广域网可以达到几十毫秒的误差，局域网误差可以在1毫米内。误差最大的一个原因是发送请求和接收响应这两个阶段的网络时间可能是不一样的。前面我们推导时间偏移公式的时候，假设网络往返发送和接收阶段的时间是一样的，但是实际网络中，这两个阶段走的路由可能是不一样的，所花的时间也可能不一样，计算的时间偏移也不准确，这样就造成了广域网的误差可能达到几十毫秒甚至更高。局域网中因为网络比较稳定，经过的路由器也比较少，所以误差可以到1毫米内。</p>
+<h2 id="Lamport逻辑时钟"><a href="#Lamport逻辑时钟" class="headerlink" title="Lamport逻辑时钟"></a>Lamport逻辑时钟</h2><p>通过逻辑时钟，可以刻画分布式系统中事件的因果一致性关系。</p>
+<p>局限：</p>
+<ol>
+<li>无法感知系统外的事件。</li>
+<li>由C(a) &lt; C(b)不能推导出a → b，即使知道了两个逻辑时钟值，但却不能确定这两个事件的因果关系。</li>
+<li>不能区分事件之间是否并发</li>
+<li>不够直观，脱离了物理时间的直观范畴</li>
+</ol>
+<h2 id="向量时钟"><a href="#向量时钟" class="headerlink" title="向量时钟"></a>向量时钟</h2><p>解决了Lamport逻辑时钟中不能描述时间因果关系的问题</p>
+<ol>
+<li>不能感知系统外的事件</li>
+<li>可以描述时间之间的因果关系</li>
+<li>可以区分事件之间的并发关系</li>
+<li>不够直观，脱离了物理时间的直观范畴</li>
+</ol>
+<h2 id="TrueTime"><a href="#TrueTime" class="headerlink" title="TrueTime"></a>TrueTime</h2><p>由谷歌提出，通过高精度的硬件，刻画了相对准确的物理时间。</p>
+<h2 id="HLC（Hybrid-Logical-Clocks）"><a href="#HLC（Hybrid-Logical-Clocks）" class="headerlink" title="HLC（Hybrid Logical Clocks）"></a>HLC（<strong>Hybrid Logical Clocks</strong>）</h2><p>(HLC)将物理时钟和逻辑时钟结合起来。</p>
+<ol>
+<li>需要的空间复杂度有限，不会随着集群规模的增长而增长。</li>
+<li>需要满足因果关系。</li>
+<li>逻辑时间部分的增长有界。</li>
+<li>逻辑时间和真实的物理时间的误差是有边界的。</li>
+</ol>
+<h2 id="DAOS中的时钟"><a href="#DAOS中的时钟" class="headerlink" title="DAOS中的时钟"></a>DAOS中的时钟</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">/** Mask for the 18 logical bits */</span><br><span class="line">#define D_HLC_MASK 0x3FFFFULL</span><br></pre></td></tr></table></figure>
+
+<p>18位用于存储逻辑时钟，46位用于存储物理时钟。</p>
+<h1 id="数据库"><a href="#数据库" class="headerlink" title="数据库"></a>数据库</h1><h2 id="数据库中的异常行为"><a href="#数据库中的异常行为" class="headerlink" title="数据库中的异常行为"></a>数据库中的异常行为</h2><ol>
+<li>脏读</li>
+<li>幻读</li>
+<li>不可重复读</li>
+<li>脏写</li>
+<li>丢失更新</li>
+</ol>
+<h2 id="数据库中的并发控制机制"><a href="#数据库中的并发控制机制" class="headerlink" title="数据库中的并发控制机制"></a>数据库中的并发控制机制</h2><ol>
+<li>基于时间的（Time-stamp ordering）</li>
+<li>基于提交顺序的（Commitment ordering）</li>
+<li>基于串行化图测试验证的（Serialization graph testing）</li>
+<li>基于锁的（Locking）</li>
+</ol>
+<h2 id="Time-stamp-ordering"><a href="#Time-stamp-ordering" class="headerlink" title="Time-stamp ordering"></a>Time-stamp ordering</h2><p>时间戳<br> （Timestamp ordering，TO）：基于时间戳对事务提交顺序排序的并发控制技术。</p>
+<h3 id="时间戳排序技术中有两类主体："><a href="#时间戳排序技术中有两类主体：" class="headerlink" title="时间戳排序技术中有两类主体："></a>时间戳排序技术中有两类主体：</h3><ol>
+<li>事务</li>
+<li>数据项。</li>
+</ol>
+<p>时间戳就要“盖（赋值）”在这两类主体上。</p>
+<h3 id="依附在事务上的时间戳："><a href="#依附在事务上的时间戳：" class="headerlink" title="依附在事务上的时间戳："></a>依附在事务上的时间戳：</h3><p>每个事务分配一个时间值（通常是在事务开始的时候分配，但有的系统是在事务提交的时候才分配时间值）作为此事务发生的标识，这个时间值称为一个“时间戳”，“时间戳”就如同为事务盖了一个章。时间值取值有两种方式，一是系统时钟，二是逻辑计数器。</p>
+<h3 id="依附在数据上的时间戳："><a href="#依附在数据上的时间戳：" class="headerlink" title="依附在数据上的时间戳："></a>依附在数据上的时间戳：</h3><p>数据项上有两个时间戳：</p>
+<ol>
+<li>读时间戳，记录读取该数据项的最大事务的时间戳</li>
+<li>写时间戳，记录写入该数据项当前值的事务对应的时间戳，即最新的修改该数据项的事务的时间戳标识。</li>
+</ol>
+<h3 id="事务根据时间戳确认先后顺序关系"><a href="#事务根据时间戳确认先后顺序关系" class="headerlink" title="事务根据时间戳确认先后顺序关系"></a>事务根据时间戳确认先后顺序关系</h3><p>因存在并发， 所以通过检查Ti事务的时间戳和Tj事务的数据项上的时间戳以确定并发事务Ti和Tj之间的先后关系（如果Ti&lt;Tj，则事务调度器必须保证所产生的并发调度等价于事务Ti先于事务Tj的某个串行调度）。</p>
+<h3 id="读写冲突按照时间戳顺序执行"><a href="#读写冲突按照时间戳顺序执行" class="headerlink" title="读写冲突按照时间戳顺序执行"></a>读写冲突按照时间戳顺序执行</h3><p>任何有冲突的READ或WRITE操作按时间戳顺序执行。</p>
+<h3 id="算法原理"><a href="#算法原理" class="headerlink" title="算法原理"></a>算法原理</h3><p><img src="/2023/03/29/Daos-mvcc-and-timestamp-ordering/image-20230301140808905.png" alt="image-20230301140808905"></p>
+<h3 id="算法解释"><a href="#算法解释" class="headerlink" title="算法解释"></a>算法解释</h3><h4 id="写读冲突"><a href="#写读冲突" class="headerlink" title="写读冲突"></a>写读冲突</h4><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">begin T2                       R(X)</span><br><span class="line">|------------------------------|------------------------------------------ <span class="keyword">case</span> 1</span><br><span class="line">              begin T2                      R(X)</span><br><span class="line">              |-----------------------------|----------------------------- <span class="keyword">case</span> 2</span><br><span class="line">		begin T1       W(X)</span><br><span class="line">		|--------------|------------------------------------------------------</span><br><span class="line">                                begin T2       R(X)</span><br><span class="line">                                |--------------|-------------------------- <span class="keyword">case</span> 3</span><br><span class="line"></span><br><span class="line">-----------------------------Time line---------------------------------------&gt;</span><br></pre></td></tr></table></figure>
+
+<p>case1:事务T2的开始时间早于事务T1,事务T2的R(X)时间晚于事务T1的W(X)时间，T2读被abort，避免脏读</p>
+<p>case2:事务T2的开始时间晚于事务T1,事务T2的R(X)时间晚于事务T1的W(X)时间，T2读被abort，避免脏读</p>
+<p>case3:事务T2的开始时间在T1写X之后，此时事务T2阻塞等待：</p>
+<ol>
+<li>事务T1提交，则事务T2不受影响</li>
+<li>事务T1abort，事务T2也必须abort，避免脏读</li>
+</ol>
+<p>总结：</p>
+<ol>
+<li>当前事务开始早于其他事务的写，当前事务的读需要abort</li>
+<li>当前事务开始晚于其他事务的写，其他事务commit，当前事务可以读。</li>
+</ol>
+<h4 id="读写冲突"><a href="#读写冲突" class="headerlink" title="读写冲突"></a>读写冲突</h4><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">begin T2                       W(X)</span><br><span class="line">|------------------------------|------------------------------------------ <span class="keyword">case</span> 1</span><br><span class="line">              begin T2                      W(X)</span><br><span class="line">              |-----------------------------|----------------------------- <span class="keyword">case</span> 2</span><br><span class="line">		begin T1       R(X)</span><br><span class="line">		|--------------|------------------------------------------------------</span><br><span class="line"></span><br><span class="line">-----------------------------Time line-------------------------------------&gt;</span><br></pre></td></tr></table></figure>
+
+<p>case1:事务T2的开始时间早于事务T1,事务T2的W(X)时间晚于事务T1的R(X)时间，T2读被abort，避免事务T1不可重复读</p>
+<p>case1:事务T2的开始时间晚于事务T1,事务T2的W(X)时间晚于事务T1的R(X)时间，T2读被abort，避免事务T1不可重复读</p>
+<p>总结：读前写后回滚写</p>
+<h4 id="写写冲突"><a href="#写写冲突" class="headerlink" title="写写冲突"></a>写写冲突</h4><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">begin T2                       W(X)</span><br><span class="line">|------------------------------|------------------------------------------ <span class="keyword">case</span> 1</span><br><span class="line">              begin T2                      W(X)</span><br><span class="line">              |-----------------------------|----------------------------- <span class="keyword">case</span> 2</span><br><span class="line">		begin T1       W(X)</span><br><span class="line">		|--------------|------------------------------------------------------</span><br><span class="line"></span><br><span class="line">-----------------------------Time line-----------------------------------------&gt;</span><br></pre></td></tr></table></figure>
+
+<p>case1:事务T2的开始时间早于事务T1,事务T2的W(X)时间晚于事务T1的W(X)时间，T2读被abort，事务T2需要写的值是事务T1介入之前的值</p>
+<p>case1:事务T2的开始时间晚于事务T1,事务T2的W(X)时间晚于事务T1的W(X)时间，T2读被abort，事务T2需要写的值是事务T1介入之前的值</p>
+<p>问：T2事务中的W(X)可能小于T1事务中的W(X)吗?</p>
+<p>答：假设Wt2(X) &lt; Wt1(X)，则代表着T2的写操作在T1的写操作之前完成，T2的写操作为后写，后写需要被abort，但是X的写时间被更新成了Wt1(X)，意味着T1的写成功， 两者矛盾，因此不可能T2事务中的W(X)可能小于T1事务中的W(X)。</p>
+<p>总结：写写冲突，回滚后写。</p>
+<h4 id="伪代码解释"><a href="#伪代码解释" class="headerlink" title="伪代码解释"></a>伪代码解释</h4><p>检查Ti需要使用到的所有value</p>
+<ol>
+<li>如果打算读value：【第一张图中的场景】<ol>
+<li>如果当前事务开始早于写操作，读要回滚再重来（否则可能会脏读）</li>
+<li>如果当前事务开始晚于写操作，将写value的事务加入到当前事务的依赖事务列表中DEP(Ti). add(WT’S(O;))，更新value的读时间戳DEP(Ti). add(WT’S(O;))</li>
+</ol>
+</li>
+<li>如果打算写value：<ol>
+<li>如果当前事务的开始早于读操作，回滚写（否则另一个事务的读可能出现不可重复读）【第二张图中的场景】</li>
+<li>如果当前事务的开始晚于写操作，abort当前事务的写或者一句Thomas Write Rule skip【第三张图中的场景】</li>
+<li>否则通过检查，存储更新前的旧值OLD(Ti). add(O;, WTS(O;)),更新value的写时间WTS(0;) = TS(I; ),更新value的值</li>
+</ol>
+</li>
+</ol>
+<p>如果DEP（Ti）中有未结束的事务，wait</p>
+<p>如果DEP（Ti）中有abort的事务，则1.2中的读也需要abort</p>
+<p>abort流程：恢复旧值和旧的时间戳。</p>
+<h2 id="DAOS中的Time-stamp-ordering"><a href="#DAOS中的Time-stamp-ordering" class="headerlink" title="DAOS中的Time-stamp ordering"></a>DAOS中的Time-stamp ordering</h2><h3 id="伪代码"><a href="#伪代码" class="headerlink" title="伪代码"></a>伪代码</h3><h4 id="A-read-at-epoch-e-follows-these-rules-（对应于写读冲突中的三个case）"><a href="#A-read-at-epoch-e-follows-these-rules-（对应于写读冲突中的三个case）" class="headerlink" title="A read at epoch e follows these rules: （对应于写读冲突中的三个case）"></a>A read at epoch e follows these rules: （对应于写读冲突中的三个case）</h4><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Epoch uncertainty check</span></span><br><span class="line">	<span class="keyword">if</span> e is uncertain</span><br><span class="line">			<span class="comment">// 写读冲突,读事务的读操作的开始晚于其他事务的写操作（读事务的读操作一定是在e_orig + epsilon之后吗？）</span></span><br><span class="line">      <span class="keyword">if</span> there is any overlapping, <span class="function">unaborted write <span class="title">in</span> <span class="params">(e, e_orig + epsilon]</span></span></span><br><span class="line"><span class="params"><span class="function">          reject <span class="comment">// 回滚读 (case1&amp;case2)</span></span></span></span><br><span class="line"><span class="params"><span class="function">  find the highest overlapping, unaborted write in [<span class="number">0</span>, e] <span class="comment">//写读冲突，读事务的开始时间晚于其他写事务的写操作事件</span></span></span></span><br><span class="line"><span class="params"><span class="function">  <span class="keyword">if</span> the write is <span class="keyword">not</span> committed <span class="comment">// 等待</span></span></span></span><br><span class="line"><span class="params"><span class="function">      wait <span class="keyword">for</span> the write to commit <span class="keyword">or</span> <span class="built_in">abort</span></span></span></span><br><span class="line"><span class="params"><span class="function">      <span class="keyword">if</span> aborted</span></span></span><br><span class="line"><span class="params"><span class="function">          retry the find skipping <span class="keyword">this</span> write <span class="comment">// 如果其他写事务abort，此读事务retry (case3)</span></span></span></span><br><span class="line"><span class="params"><span class="function">  <span class="comment">// Read timestamp update</span></span></span></span><br><span class="line"><span class="params"><span class="function">  <span class="keyword">for</span> level i from container to the read<span class="string">&#x27;s level lv</span></span></span></span><br><span class="line"><span class="string"><span class="params"><span class="function">      update i.high // 更新TimeStamp Cache</span></span></span></span><br><span class="line"><span class="string"><span class="params"><span class="function">  update lv.low</span></span></span></span><br></pre></td></tr></table></figure>
+
+<p>e:代指的是事务的开始HLC时间，e的实际开始物理时间可能在(e, e_orig + epsilon）范围内。</p>
+<p>epsilon:代指的是是HLC时间和实际物理时间的误差范围。</p>
+<h4 id="A-write-at-epoch-e-follows-these-rules-（对应于读写冲突-amp-写写冲突的几个case）"><a href="#A-write-at-epoch-e-follows-these-rules-（对应于读写冲突-amp-写写冲突的几个case）" class="headerlink" title="A write at epoch e follows these rules: （对应于读写冲突&amp;写写冲突的几个case）"></a>A write at epoch e follows these rules: （对应于读写冲突&amp;写写冲突的几个case）</h4><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Epoch uncertainty check</span></span><br><span class="line"> <span class="keyword">if</span> e is uncertain</span><br><span class="line"> 		<span class="comment">// 写写冲突，后写abort（认为当前事务的写在e_orig + epsilon时间之后）</span></span><br><span class="line">     <span class="keyword">if</span> there is any overlapping, <span class="function">unaborted write <span class="title">in</span> <span class="params">(e, e_orig + epsilon]</span></span></span><br><span class="line"><span class="params"><span class="function">         reject</span></span></span><br><span class="line"><span class="params"><span class="function"> <span class="comment">// Read timestamp check， 检查读写冲突，读在前写在后</span></span></span></span><br><span class="line"><span class="params"><span class="function"> <span class="keyword">for</span> level i from container to one level above the write</span></span></span><br><span class="line"><span class="params"><span class="function"> 		<span class="comment">// 读写冲突，如果父节点的low小于当前事务的开始时间，意味着父节点下的所有子节点都在low这个时间点被读过，则可以推导出write的目			 // 标value在low时间被读取过,当前事务的开始时间早于value的读操作时间，则当前事务需要abort</span></span></span></span><br><span class="line"><span class="params"><span class="function"> 		<span class="comment">// (i.low == e) &amp;&amp; (other reader @ i.low) --&gt; 检查是否是同一个txn中的操作，如果是同一个txn的读写，则不需要abort</span></span></span></span><br><span class="line"><span class="params"><span class="function"> 		<span class="comment">// 这些父节点的检查可能是想快速判断出是够有冲突，不必递归到目标项上做检查</span></span></span></span><br><span class="line"><span class="params"><span class="function">     <span class="keyword">if</span> (i.low &gt; e) || ((i.low == e) &amp;&amp; (other reader @ i.low))</span></span></span><br><span class="line"><span class="params"><span class="function">         reject</span></span></span><br><span class="line"><span class="params"><span class="function"> <span class="comment">// 检查目标项，读写冲突，abort写</span></span></span></span><br><span class="line"><span class="params"><span class="function"> <span class="keyword">if</span> (i.high &gt; e) || ((i.high == e) &amp;&amp; (other reader @ i.high))</span></span></span><br><span class="line"><span class="params"><span class="function">     reject</span></span></span><br><span class="line"><span class="params"><span class="function"> <span class="comment">// 此处的overlapping检查逻辑暂不明确作用,好像也是在检查写写冲突</span></span></span></span><br><span class="line"><span class="params"><span class="function"> <span class="comment">// 上面的写写冲突检查区间并没有覆盖到e这个点，是个左开右闭区间，不清楚为什么要分开检测</span></span></span></span><br><span class="line"><span class="params"><span class="function"> find <span class="keyword">if</span> there is any overlapping write at e</span></span></span><br><span class="line"><span class="params"><span class="function"> <span class="keyword">if</span> found <span class="keyword">and</span> from a different transaction</span></span></span><br><span class="line"><span class="params"><span class="function">		reject</span></span></span><br></pre></td></tr></table></figure>
+
+<p>i.low:目标节点和其所有子节点都至少在low时间点被读取过。</p>
+<p>i.high:目标节点至少有一个子节点在high时间被读取过。</p>
+<h3 id="Daos中检查冲突的代码片段"><a href="#Daos中检查冲突的代码片段" class="headerlink" title="Daos中检查冲突的代码片段"></a>Daos中检查冲突的代码片段</h3><h4 id="检查读写冲突"><a href="#检查读写冲突" class="headerlink" title="检查读写冲突"></a>检查读写冲突</h4><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 写操作检查，查看是够有读写冲突</span></span><br><span class="line"><span class="function"><span class="keyword">bool</span></span></span><br><span class="line"><span class="function"><span class="title">vos_ts_check_read_conflict</span><span class="params">(struct vos_ts_set *ts_set, <span class="keyword">int</span> idx,</span></span></span><br><span class="line"><span class="params"><span class="function">			   <span class="keyword">daos_epoch_t</span> write_time)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">	<span class="class"><span class="keyword">struct</span> <span class="title">vos_ts_set_entry</span>	*<span class="title">se</span>;</span></span><br><span class="line">	<span class="class"><span class="keyword">struct</span> <span class="title">vos_ts_entry</span>	*<span class="title">entry</span>;</span></span><br><span class="line">	<span class="keyword">int</span>			 write_level;</span><br><span class="line">	<span class="keyword">bool</span>			 conflict;</span><br><span class="line"></span><br><span class="line">	D_ASSERT(ts_set != <span class="literal">NULL</span>);</span><br><span class="line"></span><br><span class="line">	se = &amp;ts_set-&gt;ts_entries[idx];</span><br><span class="line">	entry = se-&gt;se_entry;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">if</span> (ts_set-&gt;ts_wr_level &gt; ts_set-&gt;ts_max_type)</span><br><span class="line">		write_level = ts_set-&gt;ts_max_type;</span><br><span class="line">	<span class="keyword">else</span></span><br><span class="line">		write_level = ts_set-&gt;ts_wr_level;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">if</span> (se-&gt;se_etype &gt; write_level)</span><br><span class="line">		<span class="keyword">return</span> <span class="literal">false</span>; <span class="comment">/** Check is redundant */</span></span><br><span class="line"></span><br><span class="line">	<span class="comment">/** NB: If there is a negative entry, we should also check it.  Otherwise, we can miss</span></span><br><span class="line"><span class="comment">	 *  timestamp updates associated with conditional operations where the tree exists but</span></span><br><span class="line"><span class="comment">	 *  we don&#x27;t load it ,不太明白这边的negative是什么意思？</span></span><br><span class="line"><span class="comment">	 */</span></span><br><span class="line">	<span class="comment">// 检查目标value父节点</span></span><br><span class="line">	<span class="comment">// for level i from container to one level above the write</span></span><br><span class="line">	<span class="keyword">if</span> (se-&gt;se_etype &lt; write_level) &#123;</span><br><span class="line">		<span class="comment">/* check the low time */</span></span><br><span class="line">		conflict = vos_ts_check_conflict(entry-&gt;te_ts.tp_ts_rl, &amp;entry-&gt;te_ts.tp_tx_rl,</span><br><span class="line">						 write_time, &amp;ts_set-&gt;ts_tx_id);</span><br><span class="line"></span><br><span class="line">		<span class="keyword">if</span> (conflict || entry-&gt;te_negative == <span class="literal">NULL</span>) </span><br><span class="line">		<span class="comment">// conflict为true ---》冲突</span></span><br><span class="line">		<span class="comment">// conflict为false，negative为空，---》不冲突</span></span><br><span class="line">			<span class="keyword">return</span> conflict;</span><br><span class="line">		</span><br><span class="line">		<span class="comment">// conflict为false且negative不为空，检查negative：什么是negative？</span></span><br><span class="line">		<span class="comment">// 如果和negative冲突也代表冲突</span></span><br><span class="line">		<span class="keyword">return</span> vos_ts_check_conflict(entry-&gt;te_negative-&gt;te_ts.tp_ts_rl,</span><br><span class="line">					     &amp;entry-&gt;te_negative-&gt;te_ts.tp_tx_rl,</span><br><span class="line">					     write_time, &amp;ts_set-&gt;ts_tx_id);</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="comment">/* check the high time */</span></span><br><span class="line">	<span class="comment">// if (i.high &gt; e) || ((i.high == e) &amp;&amp; (other reader @ i.high)),检查目标value的high</span></span><br><span class="line">	conflict = vos_ts_check_conflict(entry-&gt;te_ts.tp_ts_rh, &amp;entry-&gt;te_ts.tp_tx_rh, write_time,</span><br><span class="line">					 &amp;ts_set-&gt;ts_tx_id);</span><br><span class="line"></span><br><span class="line">	<span class="keyword">if</span> (conflict || entry-&gt;te_negative == <span class="literal">NULL</span>)</span><br><span class="line">	<span class="comment">// conflict为true ---》冲突</span></span><br><span class="line">	<span class="comment">// conflict为false，negative为空，---》不冲突</span></span><br><span class="line">		<span class="keyword">return</span> conflict;</span><br><span class="line"></span><br><span class="line">	<span class="comment">// conflict为false且negative不为空，检查negative：什么是negative？</span></span><br><span class="line">	<span class="comment">// 如果和negative冲突也代表冲突</span></span><br><span class="line">	<span class="keyword">return</span> vos_ts_check_conflict(entry-&gt;te_negative-&gt;te_ts.tp_ts_rh,</span><br><span class="line">				     &amp;entry-&gt;te_negative-&gt;te_ts.tp_tx_rh, write_time,</span><br><span class="line">				     &amp;ts_set-&gt;ts_tx_id);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="comment">// 检查读写冲突的子函数</span></span><br><span class="line"><span class="comment">// 如果冲突，返回true</span></span><br><span class="line"><span class="comment">// 如果不冲突，返回false</span></span><br><span class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">inline</span> <span class="keyword">bool</span></span></span><br><span class="line"><span class="function"><span class="title">vos_ts_check_conflict</span><span class="params">(<span class="keyword">daos_epoch_t</span> read_time, <span class="keyword">const</span> struct dtx_id *read_id,</span></span></span><br><span class="line"><span class="params"><span class="function">		      <span class="keyword">daos_epoch_t</span> write_time, <span class="keyword">const</span> struct dtx_id *write_id)</span></span></span><br><span class="line"><span class="function"></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">	<span class="comment">// 当前事务的开始时间晚于读操作，则不冲突</span></span><br><span class="line">	<span class="keyword">if</span> (write_time &gt; read_time)</span><br><span class="line">		<span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line"></span><br><span class="line">	<span class="comment">// 当前事务的开始时间早于读操作，冲突，abort当前事务的写</span></span><br><span class="line">	<span class="keyword">if</span> (write_time != read_time)</span><br><span class="line">		<span class="keyword">return</span> <span class="literal">true</span>;</span><br><span class="line"></span><br><span class="line">	<span class="comment">// 当前事务写操作和其他事务的读操作在同一时间发起，且这两事务不在同时发生，则冲突</span></span><br><span class="line">	<span class="keyword">if</span> (read_id-&gt;dti_hlc != write_id-&gt;dti_hlc)</span><br><span class="line">		<span class="keyword">return</span> <span class="literal">true</span>;</span><br><span class="line"></span><br><span class="line">	<span class="comment">// 当前事务写操作和其他事务的读操作在同一时间发起，且这两个事务同时发生：</span></span><br><span class="line">	<span class="comment">//	1. 事务ID号相同，则不冲突 （同一个事务内同时的读写操作）</span></span><br><span class="line">	<span class="comment">//  2. 事务ID号不同，则冲突</span></span><br><span class="line">	<span class="keyword">return</span> uuid_compare(read_id-&gt;dti_uuid, write_id-&gt;dti_uuid) != <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h4 id="检查写写冲突，写读冲突"><a href="#检查写写冲突，写读冲突" class="headerlink" title="检查写写冲突，写读冲突"></a>检查写写冲突，写读冲突</h4><p>// TODO:不能理解case2，case3中的场景</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">case1: &lt;-----------X----------------|----------------o-----------------o------------------&gt;</span><br><span class="line">                current            bound               U1                U2</span><br><span class="line">case2: &lt;-----------o----------------v----------------|-----------------o------------------&gt;</span><br><span class="line">                  U1               current          bound             U2	</span><br><span class="line">case3: &lt;-----------o----------------x----------------o-----------------|------------------&gt;</span><br><span class="line">                  U1               current          U2                bound	</span><br><span class="line">case4: &lt;-----------o----------------o----------------v-----------------|------------------&gt;</span><br><span class="line">                  U1               U2               current           bound				</span><br></pre></td></tr></table></figure>
+
+
+
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/** Do an uncertainty check on the entry.  Return true if there</span></span><br><span class="line"><span class="comment"> *  is a write within the epoch uncertainty bound or if it</span></span><br><span class="line"><span class="comment"> *  can&#x27;t be determined that the epoch is safe (e.g. a cache miss).</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> *  There are the following cases for an uncertainty check</span></span><br><span class="line"><span class="comment"> *  1. The access timestamp is earlier than both.  In such</span></span><br><span class="line"><span class="comment"> *     case, we have a cache miss and can&#x27;t determine whether</span></span><br><span class="line"><span class="comment"> *     there is uncertainty so we must reject the access.</span></span><br><span class="line"><span class="comment"> *  2. The access is later than the first and the bound is</span></span><br><span class="line"><span class="comment"> *     less than or equal to the high time.  No conflict in</span></span><br><span class="line"><span class="comment"> *     this case because the write is outside the undertainty</span></span><br><span class="line"><span class="comment"> *     bound.</span></span><br><span class="line"><span class="comment"> *  3. The access is later than the first but the bound is</span></span><br><span class="line"><span class="comment"> *     greater than the high timestamp.  We must reject the</span></span><br><span class="line"><span class="comment"> *     access because there is an uncertain write.</span></span><br><span class="line"><span class="comment"> *  4. The access is later than both timestamps.  No conflict</span></span><br><span class="line"><span class="comment"> *     in this case.</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> *  \param[in]	ts_set	The timestamp set</span></span><br><span class="line"><span class="comment"> *  \param[in]	epoch	The epoch of the update</span></span><br><span class="line"><span class="comment"> *  \param[in]	bound	The uncertainty bound</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">inline</span> <span class="keyword">bool</span></span></span><br><span class="line"><span class="function"><span class="title">vos_ts_wcheck</span><span class="params">(struct vos_ts_set *ts_set, <span class="keyword">daos_epoch_t</span> epoch,</span></span></span><br><span class="line"><span class="params"><span class="function">	      <span class="keyword">daos_epoch_t</span> bound)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">	<span class="class"><span class="keyword">struct</span> <span class="title">vos_wts_cache</span>	*<span class="title">wcache</span>;</span></span><br><span class="line">	<span class="class"><span class="keyword">struct</span> <span class="title">vos_ts_set_entry</span>	*<span class="title">se</span>;</span></span><br><span class="line">	<span class="keyword">uint32_t</span>		 high_idx;</span><br><span class="line">	<span class="keyword">daos_epoch_t</span>		 high;</span><br><span class="line">	<span class="keyword">daos_epoch_t</span>		 second;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">if</span> (!vos_ts_in_tx(ts_set) || ts_set-&gt;ts_init_count == <span class="number">0</span> ||</span><br><span class="line">	    bound &lt;= epoch)</span><br><span class="line">		<span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line"></span><br><span class="line">	se = &amp;ts_set-&gt;ts_entries[ts_set-&gt;ts_init_count - <span class="number">1</span>];</span><br><span class="line"></span><br><span class="line">	<span class="keyword">if</span> (se-&gt;se_entry == <span class="literal">NULL</span>)</span><br><span class="line">		<span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line"></span><br><span class="line">	wcache = &amp;se-&gt;se_entry-&gt;te_w_cache;</span><br><span class="line">	high_idx = wcache-&gt;wc_w_high;</span><br><span class="line">	high = wcache-&gt;wc_ts_w[high_idx];</span><br><span class="line">	<span class="comment">// 事务的开始时间晚于任何其他事务的写时间，不产生任何冲突</span></span><br><span class="line">	<span class="comment">// 写读冲突中的case3,读事务的开始时间晚于其他事务的写操作时间，需要返回等待</span></span><br><span class="line">	<span class="comment">// 写写冲突中，写事务的开始时间晚于其他事务的写操作时间，不冲突</span></span><br><span class="line">	<span class="keyword">if</span> (epoch &gt;= high) <span class="comment">/* Case #4, the access is newer than any write */</span></span><br><span class="line">		<span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line"></span><br><span class="line">	second = wcache-&gt;wc_ts_w[<span class="number">1</span> - high_idx];</span><br><span class="line">	<span class="comment">// 事务的开始时间小于其他事务写此value的Tlow,当前事务的写应该被abort</span></span><br><span class="line">	<span class="comment">// 写读冲突中，读事务的开始时间早于写事务的写操作时间，读操作需要被abort，写读冲突中的case1和case2属于此类</span></span><br><span class="line">	<span class="comment">// 写写冲突中，写事务的开始时间早于其他写事务的写操作时间，后写的需要被abort，写写冲突中的case1和case2属于此种</span></span><br><span class="line">	<span class="keyword">if</span> (epoch &lt; second) <span class="comment">/* Case #1, Cache miss, not enough history */</span></span><br><span class="line">		<span class="keyword">return</span> <span class="literal">true</span>;</span><br><span class="line"></span><br><span class="line">	<span class="comment">/* We know at this point that second &lt;= epoch so we need to determine</span></span><br><span class="line"><span class="comment">	 * only if the high time is inside the uncertainty bound.</span></span><br><span class="line"><span class="comment">	 */</span></span><br><span class="line">	<span class="keyword">if</span> (bound &gt;= high) <span class="comment">/* Case #3, Uncertain write conflict */</span></span><br><span class="line">		<span class="keyword">return</span> <span class="literal">true</span>;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+
+<h2 id="DAOS中基于时间戳的多版本并发控制协议"><a href="#DAOS中基于时间戳的多版本并发控制协议" class="headerlink" title="DAOS中基于时间戳的多版本并发控制协议"></a>DAOS中基于时间戳的多版本并发控制协议</h2><h3 id="时间戳排序的多版本并发控制协议算法原理"><a href="#时间戳排序的多版本并发控制协议算法原理" class="headerlink" title="时间戳排序的多版本并发控制协议算法原理"></a>时间戳排序的多版本并发控制协议算法原理</h3><p>MVCC不是一 个可独立使用的事务并发控制技术，而是需要基于其他并发控制技术，如基于时间戳的称为多版本时间戳排序机制( multiversion timestamp-ordering scheme) ， 基于两 阶段封锁协议的称为多版本两 阶段封锁协议 ( multiversion two-phase locking protocol)’’。 </p>
+<p>基于时间戳的称为多版本时间戳排序机制的基本原理：</p>
+<ol>
+<li>首先，数据库系统在事务开始前赋予一个时间戳，记为TS（Ti），这个时间戳则决定了并发的事务的调度顺序。</li>
+<li>对于每个数据项X，多版本体现在：X有一个版本序列&lt;X1，X2，…，Xn&gt;，其中，每个版本Xi包括三个字段，分别是：<ol>
+<li>Xi=value，value是数据项X的第i个版本的值，每个版本是由一个写操作生成的。</li>
+<li>W-timestamp（Xi）是创建Xi这个版本的事务的时间戳（不是当前时间戳值），即表明此数据项是被谁在什么时候创建的。</li>
+<li>R-timestamp（Xi）是所有成功读取Xi这个版本的事务的时间戳。</li>
+</ol>
+</li>
+<li>再次，多版本时间戳排序机制通过如下规则，保证可串行性：<ol>
+<li>如果事务Ti执行Read操作或Write操作，假设Xm表示X满足如下条件的版本，其写时间戳是小于或等于TS（Ti）的最大写时间戳（确保了在所有版本中找到一个“最近版本”）。</li>
+<li>如果事务Ti执行读操作Read（X），返回给事务Ti的值为Xm。读永远不会被阻塞。 </li>
+<li>如果事务Ti执行写操作Write（X）：<ol>
+<li>如果 TS(Ti)&lt;R-timestamp(Xm)，则中止事务 Ti，这表明即将执行的这个写操作之后的时间上已经发生过了 一个读操作，如果允许写操作成功，则可能发生 不可重复读异常现象 。 这是写 - i卖冲突，事务 Ti 被中止 。 </li>
+<li>如果 TS(Ti)=W-tim巳stamp(X时，则系统更新事务 Ti 的值 Xm 为新值，这表明本事务多次写过同一个数据项，新值覆盖旧值 </li>
+<li>如果 TS(Ti)&gt;W-timestamp(Xm)，则系统为事务 Ti 的数据项 X 创建一个新值，这说明后发生的事务才创建新的版本 。 这是写一写冲突，导致产生新版本 。</li>
+</ol>
+</li>
+</ol>
+</li>
+</ol>
+<h3 id="DAOS中的时间戳的多版本并发控制协议代码片段"><a href="#DAOS中的时间戳的多版本并发控制协议代码片段" class="headerlink" title="DAOS中的时间戳的多版本并发控制协议代码片段"></a>DAOS中的时间戳的多版本并发控制协议代码片段</h3><p>TODO</p>
+<h2 id="Question："><a href="#Question：" class="headerlink" title="Question："></a>Question：</h2><ol>
+<li><p>为什么Daos中每个entry需要记录两个write TimeStamp？</p>
+<p>按照传统的Time Ordering算法，只记录一个readTimeStamp和一个writeTimeStamp。</p>
+<p>daos的文档中这样描述：</p>
+<blockquote>
+<p>In order to detect epoch uncertainty violations, VOS also maintains a pair of write timestamps for each container, object, dkey, and akey. Logically, the timestamps represent the latest two updates to either the entity itself or to an entity in a subtree. At least two timestamps are required to avoid assuming uncertainty if there are any later updates. The figure below shows the need for at least two timestamps. With a single timestamp only, the first, second, and third cases would be indistinguishable and would be rejected as uncertain. </p>
+</blockquote>
+<pre><code> 根据文档的描述，记录两个Write TimeStamp，可以减少一些uncertain场景的冲突个数。按照传统的Time Ordering算法，上一小        节中的case2，case3，和case4都应该被abort。通过记录两个TimeStamp，case2可以不abort。没有理解这边不abort的理由。
+</code></pre>
+</li>
+<li><p>TimeStamp entry中的negative代表了什么？为什么检查冲突的时候也需要检查negative</p>
+<blockquote>
+<p>NB: If there is a negative entry, we should also check it.  Otherwise, we can miss timestamp updates associated with conditional operations where the tree exists but we don’t load it </p>
+</blockquote>
+</li>
+</ol>
+<h2 id="其他参考："><a href="#其他参考：" class="headerlink" title="其他参考："></a>其他参考：</h2><h3 id="CockroachDB中关于TimeStamp-Cache的描述："><a href="#CockroachDB中关于TimeStamp-Cache的描述：" class="headerlink" title="CockroachDB中关于TimeStamp Cache的描述："></a>CockroachDB中关于TimeStamp Cache的描述：</h3><blockquote>
+<h4 id="Read-Write-Conflicts-–-Read-Timestamp-Cache"><a href="#Read-Write-Conflicts-–-Read-Timestamp-Cache" class="headerlink" title="Read-Write Conflicts – Read Timestamp Cache"></a><strong>Read-Write Conflicts</strong> – Read Timestamp Cache</h4><p>On any read operation, the timestamp of that read operation is recorded in a node-local <em>timestamp cache</em>. This cache will return the most recent timestamp at which the key was read.</p>
+<p>All write operations consult the timestamp cache for the key they are writing; if the returned timestamp is greater than the operation timestamp, this indicates a RW conflict with a later timestamp.  To disallow this, the operation (and its transaction) must be aborted and restarted with a later timestamp.</p>
+<p>The timestamp cache is an interval cache, meaning that its keys are actually key ranges. If a read operation is actually a predicate operating over a range of keys (such as a scan), then the entire scanned key range is written to the timestamp cache. This prevents RW conflicts where the key being written was not present during the scan operation.</p>
+<p>The timestamp cache is a size-limited, in-memory LRU (least recently used) data structure, with the oldest timestamps being evicted when the size limit is reached. To deal with keys not in the cache, we also maintain a “low water mark”, which is equivalent to the earliest read timestamp of any key that is present in the cache. If a write operation writes to a key not present in the cache, the “low water mark” is returned instead.</p>
+<h4 id="Write-Write-Conflicts-–-Can-only-write-the-most-recent-version-of-a-key"><a href="#Write-Write-Conflicts-–-Can-only-write-the-most-recent-version-of-a-key" class="headerlink" title="Write-Write Conflicts – Can only write the most recent version of a key"></a><strong>Write-Write Conflicts</strong> – Can only write the most recent version of a key</h4><p>If a write operation attempts to write to a key, but that key already has a version with a later timestamp than the operation itself, allowing the operation would create a WW conflict with the later transaction.  To ensure serializability, the operation (and its transaction) must be aborted and restarted with a later timestamp.</p>
+<p>By choosing a timestamp-based ordering, and rejecting all conflicts which disagree with that ordering, CockroachDB’s Serializable Snapshot guarantees a serializable schedule.</p>
+<h3 id="Timestamp-cache"><a href="#Timestamp-cache" class="headerlink" title="Timestamp cache"></a>Timestamp cache</h3><p>The timestamp cache tracks the highest timestamp (i.e., most recent) for any read operation that a given range has served.</p>
+<p>Each write operation in a <code>BatchRequest</code> checks its own timestamp versus the timestamp cache to ensure that the write operation has a higher timestamp; this guarantees that history is never rewritten and you can trust that reads always served the most recent data. It’s one of the crucial mechanisms CockroachDB uses to ensure serializability. If a write operation fails this check, it must be restarted at a timestamp higher than the timestamp cache’s value.</p>
+</blockquote>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/storage/" rel="tag"># storage</a>
+              <a href="/tags/DAOS/" rel="tag"># DAOS</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2023/03/25/notes-of-craft/" rel="prev" title="Notes of CRaft">
+      <i class="fa fa-chevron-left"></i> Notes of CRaft
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2023/04/01/Daos-2-phase-commit/" rel="next" title="Daos-2-phase-commit">
+      Daos-2-phase-commit <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%88%86%E5%B8%83%E5%BC%8F%E7%B3%BB%E7%BB%9F%E4%B8%AD%E7%9A%84%E6%97%B6%E9%97%B4"><span class="nav-number">1.</span> <span class="nav-text">分布式系统中的时间</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#Network-Time-Protocol%EF%BC%88NTP%EF%BC%89"><span class="nav-number">1.1.</span> <span class="nav-text">Network Time Protocol（NTP）</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Lamport%E9%80%BB%E8%BE%91%E6%97%B6%E9%92%9F"><span class="nav-number">1.2.</span> <span class="nav-text">Lamport逻辑时钟</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%90%91%E9%87%8F%E6%97%B6%E9%92%9F"><span class="nav-number">1.3.</span> <span class="nav-text">向量时钟</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#TrueTime"><span class="nav-number">1.4.</span> <span class="nav-text">TrueTime</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#HLC%EF%BC%88Hybrid-Logical-Clocks%EF%BC%89"><span class="nav-number">1.5.</span> <span class="nav-text">HLC（Hybrid Logical Clocks）</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#DAOS%E4%B8%AD%E7%9A%84%E6%97%B6%E9%92%9F"><span class="nav-number">1.6.</span> <span class="nav-text">DAOS中的时钟</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E6%95%B0%E6%8D%AE%E5%BA%93"><span class="nav-number">2.</span> <span class="nav-text">数据库</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%95%B0%E6%8D%AE%E5%BA%93%E4%B8%AD%E7%9A%84%E5%BC%82%E5%B8%B8%E8%A1%8C%E4%B8%BA"><span class="nav-number">2.1.</span> <span class="nav-text">数据库中的异常行为</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%95%B0%E6%8D%AE%E5%BA%93%E4%B8%AD%E7%9A%84%E5%B9%B6%E5%8F%91%E6%8E%A7%E5%88%B6%E6%9C%BA%E5%88%B6"><span class="nav-number">2.2.</span> <span class="nav-text">数据库中的并发控制机制</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Time-stamp-ordering"><span class="nav-number">2.3.</span> <span class="nav-text">Time-stamp ordering</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%97%B6%E9%97%B4%E6%88%B3%E6%8E%92%E5%BA%8F%E6%8A%80%E6%9C%AF%E4%B8%AD%E6%9C%89%E4%B8%A4%E7%B1%BB%E4%B8%BB%E4%BD%93%EF%BC%9A"><span class="nav-number">2.3.1.</span> <span class="nav-text">时间戳排序技术中有两类主体：</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BE%9D%E9%99%84%E5%9C%A8%E4%BA%8B%E5%8A%A1%E4%B8%8A%E7%9A%84%E6%97%B6%E9%97%B4%E6%88%B3%EF%BC%9A"><span class="nav-number">2.3.2.</span> <span class="nav-text">依附在事务上的时间戳：</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BE%9D%E9%99%84%E5%9C%A8%E6%95%B0%E6%8D%AE%E4%B8%8A%E7%9A%84%E6%97%B6%E9%97%B4%E6%88%B3%EF%BC%9A"><span class="nav-number">2.3.3.</span> <span class="nav-text">依附在数据上的时间戳：</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BA%8B%E5%8A%A1%E6%A0%B9%E6%8D%AE%E6%97%B6%E9%97%B4%E6%88%B3%E7%A1%AE%E8%AE%A4%E5%85%88%E5%90%8E%E9%A1%BA%E5%BA%8F%E5%85%B3%E7%B3%BB"><span class="nav-number">2.3.4.</span> <span class="nav-text">事务根据时间戳确认先后顺序关系</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%AF%BB%E5%86%99%E5%86%B2%E7%AA%81%E6%8C%89%E7%85%A7%E6%97%B6%E9%97%B4%E6%88%B3%E9%A1%BA%E5%BA%8F%E6%89%A7%E8%A1%8C"><span class="nav-number">2.3.5.</span> <span class="nav-text">读写冲突按照时间戳顺序执行</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%AE%97%E6%B3%95%E5%8E%9F%E7%90%86"><span class="nav-number">2.3.6.</span> <span class="nav-text">算法原理</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%AE%97%E6%B3%95%E8%A7%A3%E9%87%8A"><span class="nav-number">2.3.7.</span> <span class="nav-text">算法解释</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%86%99%E8%AF%BB%E5%86%B2%E7%AA%81"><span class="nav-number">2.3.7.1.</span> <span class="nav-text">写读冲突</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E8%AF%BB%E5%86%99%E5%86%B2%E7%AA%81"><span class="nav-number">2.3.7.2.</span> <span class="nav-text">读写冲突</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%86%99%E5%86%99%E5%86%B2%E7%AA%81"><span class="nav-number">2.3.7.3.</span> <span class="nav-text">写写冲突</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E4%BC%AA%E4%BB%A3%E7%A0%81%E8%A7%A3%E9%87%8A"><span class="nav-number">2.3.7.4.</span> <span class="nav-text">伪代码解释</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#DAOS%E4%B8%AD%E7%9A%84Time-stamp-ordering"><span class="nav-number">2.4.</span> <span class="nav-text">DAOS中的Time-stamp ordering</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BC%AA%E4%BB%A3%E7%A0%81"><span class="nav-number">2.4.1.</span> <span class="nav-text">伪代码</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#A-read-at-epoch-e-follows-these-rules-%EF%BC%88%E5%AF%B9%E5%BA%94%E4%BA%8E%E5%86%99%E8%AF%BB%E5%86%B2%E7%AA%81%E4%B8%AD%E7%9A%84%E4%B8%89%E4%B8%AAcase%EF%BC%89"><span class="nav-number">2.4.1.1.</span> <span class="nav-text">A read at epoch e follows these rules: （对应于写读冲突中的三个case）</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#A-write-at-epoch-e-follows-these-rules-%EF%BC%88%E5%AF%B9%E5%BA%94%E4%BA%8E%E8%AF%BB%E5%86%99%E5%86%B2%E7%AA%81-amp-%E5%86%99%E5%86%99%E5%86%B2%E7%AA%81%E7%9A%84%E5%87%A0%E4%B8%AAcase%EF%BC%89"><span class="nav-number">2.4.1.2.</span> <span class="nav-text">A write at epoch e follows these rules: （对应于读写冲突&amp;写写冲突的几个case）</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Daos%E4%B8%AD%E6%A3%80%E6%9F%A5%E5%86%B2%E7%AA%81%E7%9A%84%E4%BB%A3%E7%A0%81%E7%89%87%E6%AE%B5"><span class="nav-number">2.4.2.</span> <span class="nav-text">Daos中检查冲突的代码片段</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%A3%80%E6%9F%A5%E8%AF%BB%E5%86%99%E5%86%B2%E7%AA%81"><span class="nav-number">2.4.2.1.</span> <span class="nav-text">检查读写冲突</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%A3%80%E6%9F%A5%E5%86%99%E5%86%99%E5%86%B2%E7%AA%81%EF%BC%8C%E5%86%99%E8%AF%BB%E5%86%B2%E7%AA%81"><span class="nav-number">2.4.2.2.</span> <span class="nav-text">检查写写冲突，写读冲突</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#DAOS%E4%B8%AD%E5%9F%BA%E4%BA%8E%E6%97%B6%E9%97%B4%E6%88%B3%E7%9A%84%E5%A4%9A%E7%89%88%E6%9C%AC%E5%B9%B6%E5%8F%91%E6%8E%A7%E5%88%B6%E5%8D%8F%E8%AE%AE"><span class="nav-number">2.5.</span> <span class="nav-text">DAOS中基于时间戳的多版本并发控制协议</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%97%B6%E9%97%B4%E6%88%B3%E6%8E%92%E5%BA%8F%E7%9A%84%E5%A4%9A%E7%89%88%E6%9C%AC%E5%B9%B6%E5%8F%91%E6%8E%A7%E5%88%B6%E5%8D%8F%E8%AE%AE%E7%AE%97%E6%B3%95%E5%8E%9F%E7%90%86"><span class="nav-number">2.5.1.</span> <span class="nav-text">时间戳排序的多版本并发控制协议算法原理</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#DAOS%E4%B8%AD%E7%9A%84%E6%97%B6%E9%97%B4%E6%88%B3%E7%9A%84%E5%A4%9A%E7%89%88%E6%9C%AC%E5%B9%B6%E5%8F%91%E6%8E%A7%E5%88%B6%E5%8D%8F%E8%AE%AE%E4%BB%A3%E7%A0%81%E7%89%87%E6%AE%B5"><span class="nav-number">2.5.2.</span> <span class="nav-text">DAOS中的时间戳的多版本并发控制协议代码片段</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Question%EF%BC%9A"><span class="nav-number">2.6.</span> <span class="nav-text">Question：</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%85%B6%E4%BB%96%E5%8F%82%E8%80%83%EF%BC%9A"><span class="nav-number">2.7.</span> <span class="nav-text">其他参考：</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#CockroachDB%E4%B8%AD%E5%85%B3%E4%BA%8ETimeStamp-Cache%E7%9A%84%E6%8F%8F%E8%BF%B0%EF%BC%9A"><span class="nav-number">2.7.1.</span> <span class="nav-text">CockroachDB中关于TimeStamp Cache的描述：</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#Read-Write-Conflicts-%E2%80%93-Read-Timestamp-Cache"><span class="nav-number">2.7.1.1.</span> <span class="nav-text">Read-Write Conflicts – Read Timestamp Cache</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Write-Write-Conflicts-%E2%80%93-Can-only-write-the-most-recent-version-of-a-key"><span class="nav-number">2.7.1.2.</span> <span class="nav-text">Write-Write Conflicts – Can only write the most recent version of a key</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Timestamp-cache"><span class="nav-number">2.7.2.</span> <span class="nav-text">Timestamp cache</span></a></li></ol></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Javie Chen</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">12</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">2</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">11</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2023</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Javie Chen</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a>
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

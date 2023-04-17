@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 6.0.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="Raft协议 流程： 选主，投票，确认 向Leader发送日志 Leader分发日志，F+1个slave确认 Leader提交日志，回复client，同步commit信息  Raft协议保证两个properties： Safety. They never return incorrect results under all non- Byzantine conditions. Liveness.">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Notes of CRaft">
+<meta property="og:url" content="http://example.com/2023/03/25/notes-of-craft/index.html">
+<meta property="og:site_name" content="Saturn">
+<meta property="og:description" content="Raft协议 流程： 选主，投票，确认 向Leader发送日志 Leader分发日志，F+1个slave确认 Leader提交日志，回复client，同步commit信息  Raft协议保证两个properties： Safety. They never return incorrect results under all non- Byzantine conditions. Liveness.">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="http://example.com/2023/03/25/notes-of-craft/image-20230316131248161-1716311.png">
+<meta property="og:image" content="http://example.com/2023/03/25/notes-of-craft/image-20230316132947759-1716311.png">
+<meta property="og:image" content="https://wikimedia.org/api/rest_v1/media/math/render/svg/a601995d55609f2d9f5e233e36fbe9ea26011b3b">
+<meta property="og:image" content="https://wikimedia.org/api/rest_v1/media/math/render/svg/59d2b4cb72e304526cf5b5887147729ea259da78">
+<meta property="og:image" content="https://wikimedia.org/api/rest_v1/media/math/render/svg/270d2d1250b851b5ab8c8b6784ae6f7af43605d4">
+<meta property="og:image" content="https://wikimedia.org/api/rest_v1/media/math/render/svg/cbeb82b24cbbca97fea9fb9343b305f04b046c0f">
+<meta property="og:image" content="https://wikimedia.org/api/rest_v1/media/math/render/svg/b8f4302012c92aae6005095ab7c03aed1409e0f3">
+<meta property="og:image" content="http://example.com/2023/03/25/notes-of-craft/image-20230316134304214-1716311.png">
+<meta property="og:image" content="http://example.com/2023/03/25/notes-of-craft/image-20230316134640443-1716311.png">
+<meta property="og:image" content="http://example.com/2023/03/25/notes-of-craft/image-20230316134737115-1716311.png">
+<meta property="og:image" content="http://example.com/2023/03/25/notes-of-craft/image-20230316143621949-1716311.png">
+<meta property="og:image" content="http://example.com/2023/03/25/notes-of-craft/image-20230316145948620-1716311.png">
+<meta property="og:image" content="http://example.com/2023/03/25/notes-of-craft/image-20230316151703873-1716311.png">
+<meta property="og:image" content="http://example.com/2023/03/25/notes-of-craft/image-20230316152248757-1716311.png">
+<meta property="og:image" content="http://example.com/2023/03/25/notes-of-craft/image-20230316154606324-1716311.png">
+<meta property="og:image" content="http://example.com/2023/03/25/notes-of-craft/image-20230316162654905-1716311.png">
+<meta property="og:image" content="http://example.com/2023/03/25/notes-of-craft/image-20230316163237975-1716311.png">
+<meta property="og:image" content="http://example.com/2023/03/25/notes-of-craft/image-20230316164326189-1716311.png">
+<meta property="og:image" content="http://example.com/2023/03/25/notes-of-craft/image-20230316164936694-1716311.png">
+<meta property="og:image" content="http://example.com/2023/03/25/notes-of-craft/image-20230316165402693-1716311.png">
+<meta property="article:published_time" content="2023-03-25T02:41:13.000Z">
+<meta property="article:modified_time" content="2023-04-17T07:28:38.059Z">
+<meta property="article:author" content="Javie Chen">
+<meta property="article:tag" content="distributed">
+<meta property="article:tag" content="raft">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://example.com/2023/03/25/notes-of-craft/image-20230316131248161-1716311.png">
+
+<link rel="canonical" href="http://example.com/2023/03/25/notes-of-craft/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'en'
+  };
+</script>
+
+  <title>Notes of CRaft | Saturn</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Saturn</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">The devil is in the details.</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2023/03/25/notes-of-craft/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Javie Chen">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Saturn">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Notes of CRaft
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2023-03-25 10:41:13" itemprop="dateCreated datePublished" datetime="2023-03-25T10:41:13+08:00">2023-03-25</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2023-04-17 15:28:38" itemprop="dateModified" datetime="2023-04-17T15:28:38+08:00">2023-04-17</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/knowledge/" itemprop="url" rel="index"><span itemprop="name">knowledge</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h2 id="Raft协议"><a href="#Raft协议" class="headerlink" title="Raft协议"></a>Raft协议</h2><p><img src="/2023/03/25/notes-of-craft/image-20230316131248161-1716311.png" alt="image-20230316131248161"></p>
+<h3 id="流程："><a href="#流程：" class="headerlink" title="流程："></a>流程：</h3><ol>
+<li>选主，投票，确认</li>
+<li>向Leader发送日志</li>
+<li>Leader分发日志，F+1个slave确认</li>
+<li>Leader提交日志，回复client，同步commit信息</li>
+</ol>
+<h3 id="Raft协议保证两个properties："><a href="#Raft协议保证两个properties：" class="headerlink" title="Raft协议保证两个properties："></a>Raft协议保证两个properties：</h3><ol>
+<li><em>Safety</em>. They never return incorrect results under all non- Byzantine conditions.</li>
+<li><em>Liveness</em>. They are fully functional as long as any majority of the servers are alive and can communicate with each other and with clients. We call this group of servers <em>healthy</em>.</li>
+</ol>
+<p>Safety property由Leader Completeness Property 保证： if a log entry is committed in a given term, then that entry will be present in the logs of the leaders for all higher-numbered terms.</p>
+<p>Liveness 由Raft的rule保证。</p>
+<h2 id="Erasure-Coding"><a href="#Erasure-Coding" class="headerlink" title="Erasure Coding"></a>Erasure Coding</h2><p>纠删码是一种通用的用来在存储和网络传输领域容错的手段。</p>
+<h3 id="Reed-Solomon-code（RS-code）"><a href="#Reed-Solomon-code（RS-code）" class="headerlink" title="Reed-Solomon code（RS-code）"></a>Reed-Solomon code（RS-code）</h3><h5 id="原理："><a href="#原理：" class="headerlink" title="原理："></a>原理：</h5><p>给定n个数据块d1, d2,…, dn，n和一个正整数m， RS根据n个数据块生成m个校验块， c1, c2,…, cm。 对于任意的n和m， 从n个原始数据块和m 个校验块中任取n块就能解码出原始数据， 即RS最多容忍m个数据块或者校验块同时丢失（纠删码只能容忍数据丢失，无法容忍数据篡改，纠删码正是得名与此）。</p>
+<img src="/2023/03/25/notes-of-craft/image-20230316132947759-1716311.png" alt="image-20230316132947759" style="zoom:50%;">
+
+<h5 id="单位矩阵："><a href="#单位矩阵：" class="headerlink" title="单位矩阵："></a>单位矩阵：</h5><p>定义：在<a target="_blank" rel="noopener" href="https://zh.wikipedia.org/wiki/%E7%B7%9A%E6%80%A7%E4%BB%A3%E6%95%B8">线性代数</a>中，n<img src="https://wikimedia.org/api/rest_v1/media/math/render/svg/a601995d55609f2d9f5e233e36fbe9ea26011b3b" alt="n">阶<strong>单位矩阵</strong>，是一个n×n<img src="https://wikimedia.org/api/rest_v1/media/math/render/svg/59d2b4cb72e304526cf5b5887147729ea259da78" alt="n\times n">的<a target="_blank" rel="noopener" href="https://zh.wikipedia.org/wiki/%E6%96%B9%E5%BD%A2%E7%9F%A9%E9%99%A3">方形矩阵</a>，其<a target="_blank" rel="noopener" href="https://zh.wikipedia.org/wiki/%E4%B8%BB%E5%B0%8D%E8%A7%92%E7%B7%9A">主对角线</a>元素为1，其馀元素为0。</p>
+<p>性质：<img src="https://wikimedia.org/api/rest_v1/media/math/render/svg/270d2d1250b851b5ab8c8b6784ae6f7af43605d4" alt="AI_{n}=A">且InB=B<img src="https://wikimedia.org/api/rest_v1/media/math/render/svg/cbeb82b24cbbca97fea9fb9343b305f04b046c0f" alt="I_{n}B=B">(<strong>任何矩阵与单位矩阵相乘都等于本身</strong>)</p>
+<h5 id="范德蒙矩阵（vandermonde-matrix）："><a href="#范德蒙矩阵（vandermonde-matrix）：" class="headerlink" title="范德蒙矩阵（vandermonde matrix）："></a><strong>范德蒙矩阵</strong>（vandermonde matrix）：</h5><p>定义：<img src="https://wikimedia.org/api/rest_v1/media/math/render/svg/b8f4302012c92aae6005095ab7c03aed1409e0f3" alt="{\displaystyle V={\begin{bmatrix}1&amp;\alpha _{1}&amp;\alpha _{1}^{2}&amp;\dots &amp;\alpha _{1}^{n-1}\\1&amp;\alpha _{2}&amp;\alpha _{2}^{2}&amp;\dots &amp;\alpha _{2}^{n-1}\\1&amp;\alpha _{3}&amp;\alpha _{3}^{2}&amp;\dots &amp;\alpha _{3}^{n-1}\\\vdots &amp;\vdots &amp;\vdots &amp;\ddots &amp;\vdots \\1&amp;\alpha _{m}&amp;\alpha _{m}^{2}&amp;\dots &amp;\alpha _{m}^{n-1}\\\end{bmatrix}}}"></p>
+<p>之所以采用vandermonde矩阵的原因是， RS数据恢复算法要求编码矩阵任意n*n子矩阵可逆。</p>
+<h5 id="逆矩阵："><a href="#逆矩阵：" class="headerlink" title="逆矩阵："></a>逆矩阵：</h5><p>性质：矩阵和其逆矩阵相乘，结果等于单位矩阵。</p>
+<h5 id="举例："><a href="#举例：" class="headerlink" title="举例："></a>举例：</h5><p>假设D1，D4和C2丢失，如何通过RS-code恢复？</p>
+<ol>
+<li>根据编码的等式，获得B‘等式：</li>
+</ol>
+<img src="/2023/03/25/notes-of-craft/image-20230316134304214-1716311.png" alt="image-20230316134304214" style="zoom:50%;">
+
+<ol start="2">
+<li><p>由于编码矩阵可逆，将等式两边乘以编码矩阵的逆矩阵：</p>
+<img src="/2023/03/25/notes-of-craft/image-20230316134640443-1716311.png" alt="image-20230316134640443" style="zoom:50%;"></li>
+<li><p>根据上面提到的逆矩阵性质，矩阵乘以其逆矩阵等于单位矩阵，得到以下等式</p>
+<img src="/2023/03/25/notes-of-craft/image-20230316134737115-1716311.png" alt="image-20230316134737115" style="zoom:50%;"></li>
+<li><p>所以对幸存的fragment使用编码矩阵的逆矩阵进行重新编码，可以获取到原始的fragment。</p>
+</li>
+</ol>
+<h4 id="此论文中RS-code的一些相关定义："><a href="#此论文中RS-code的一些相关定义：" class="headerlink" title="此论文中RS-code的一些相关定义："></a>此论文中RS-code的一些相关定义：</h4><p>RS可以定义一组整数，k和m，data被等分为k组，使用k组fragment编码生成m组parity fragment，因此一共有k+m组编码后的fragment，称作coded-fragment。集群中有N个Server，每个Server存储一个coded-fragment，因此k+m = N。</p>
+<h2 id="RS-Paxos"><a href="#RS-Paxos" class="headerlink" title="RS-Paxos"></a>RS-Paxos</h2><p>RS-Paxos也是结合了RS纠删码，可以将存储代价大大降低，付出的代价是Liveness性质不能和Paxos一致。</p>
+<p>假设集群中有2F + 1个节点，Paxos可以容忍F个节点的failure，因此将Liveness定义为F。Paxos算法和Raft算法都遵循排容原理（inclusion-exclusion principle）：</p>
+<p><code>|A ∪ B| = | A |+| B |−| A ∩ B | </code>(1)</p>
+<p>（1）中是两个集合之间的排容原理：</p>
+<ol>
+<li>假设有限集A和B不相交，则 A U B = A + B</li>
+<li>假设有限集A和B相交，则A + B中交集算了两次，需要减去一次交集A ∩ B</li>
+</ol>
+<p>inclusion-exclusion principle 保证了在一个Raft group中，两个majority必定至少有一个共同的节点。</p>
+<p>证明：If |<em>A</em>| &gt; |<em>A</em>∪<em>B</em>|/2 and |<em>B</em>| &gt; |<em>A</em>∪<em>B</em>|/2, |<em>A</em>∩<em>B</em>| = |<em>A</em>|+|<em>B</em>|−|<em>A</em>∪<em>B</em>| &gt; 0.</p>
+<p>结论：RS-Paxos的Liveness是小于F的。</p>
+<p>证明：</p>
+<ol>
+<li>RS-Paxos中，需要满足条件<code>Qr + Qw − N ≥ k</code> (2)：Qr和Qw的交集中的Server个数至少为k</li>
+<li>RS-Paxos中，至少要max(Qr,Qw)个healthy节点存在才能work</li>
+<li>如果一个command被提交，那么至少Qw个节点accept过</li>
+<li>如果某节点proposal一个command，那么在prepare阶段至少需要contact Qr个节点</li>
+<li>设RS-Paxos的Liveness为L</li>
+</ol>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">1. L &lt;= N - max(Qr,Qw)</span><br><span class="line">2. 根据（2），max(Qr,Qw) &gt;= (Qr + Qw)/2 &gt;= (N + k)/2 </span><br><span class="line">3. 根据以上两条，所以 L &lt;= N - (N + k)/2 = (N - k)/2 = (2F + 1 - k)/2 = F - (k + 1)/2 &lt; F</span><br></pre></td></tr></table></figure>
+
+
+
+<h2 id="CRaft"><a href="#CRaft" class="headerlink" title="CRaft"></a>CRaft</h2><h3 id="设计目标："><a href="#设计目标：" class="headerlink" title="设计目标："></a>设计目标：</h3><ol>
+<li>提供和经典Raft算法一致的Liveness性质（通过限制1来实现）</li>
+<li>通过RS-code,降低存储代价</li>
+</ol>
+<h3 id="限制："><a href="#限制：" class="headerlink" title="限制："></a>限制：</h3><ol>
+<li><p>在一个有2F+1个节点的Raft Group中，当只有F+1个节点存活时，log entry只有在被完整的复制到所有的F+1个healthy节点上后，才能被提交。</p>
+<p>证明：假设在2F+1个节点的Group中，当前时刻T1只有F+1个Server存活（S和剩余节点），有节点S和log e，e已经提交，S只存储了e的一个fragment。下一时刻T2，S存活，上一时刻的剩余节点全部unhealthy，上一时刻unhealthy的节点全部转为active，此时只有S存储有log e的一个fragment，无法恢复出完整的log，得证。</p>
+</li>
+</ol>
+<h3 id="coded-fragment-replication-and-complete-entry-replication"><a href="#coded-fragment-replication-and-complete-entry-replication" class="headerlink" title="coded-fragment replication and complete-entry replication"></a>coded-fragment replication and complete-entry replication</h3><h4 id="Coded-fragment-Replication"><a href="#Coded-fragment-Replication" class="headerlink" title="Coded-fragment Replication"></a>Coded-fragment Replication</h4><h5 id="流程：-1"><a href="#流程：-1" class="headerlink" title="流程："></a>流程：</h5><ol>
+<li><p>encode原始log，获取k+m个fragment</p>
+</li>
+<li><p>leader分fragments</p>
+</li>
+<li><p>至少F+k个slave成功收到fragment并响应leader后，leader commit此log</p>
+</li>
+<li><p>通知slave commit此log</p>
+<p><img src="/2023/03/25/notes-of-craft/image-20230316143621949-1716311.png" alt="image-20230316143621949"></p>
+</li>
+</ol>
+<h5 id="why-F-k"><a href="#why-F-k" class="headerlink" title="why F+k?"></a>why F+k?</h5><p>相较于经典raft理论中，leader在收到F+1个slave的成功响应后即可commit log，CRaft中的commit条件更为严格，在使用coded-fragment replication分发后，需要在F+k个slave响应后方能提交。F+k为了保证Liveness属性，保证了在leader选举后，leader能够正确的从fragment中恢复出完整的log entry。</p>
+<h5 id="证明："><a href="#证明：" class="headerlink" title="证明："></a>证明：</h5><p>假设T1时刻leader无响应，出发leader选举后，选举出新的leader。Raft的election rule保证了选举出的leader拥有最新最全的日志，假设日志e已经提交，新的leader必定拥有e的fragment，由于e已提交，因此至少F+k个Server存储了e的coded-fragments：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">设 A = (F + k),B = (F + 1)</span><br><span class="line">A + B = F + k + F + 1 = 2F + 1 + K</span><br><span class="line">因为 2F + 1 = N</span><br><span class="line">所以 A + B - N = 2F + 1 - N + K = k (1)</span><br><span class="line">根据 A ∪ B = A + B − A ∩ B，因此 A ∩ B = A + B - A ∪ B (2)</span><br><span class="line">由于 A 和 B都属于raft组的majority，因此 A ∪ B &lt;= N</span><br><span class="line">所以 A + B - N &lt; A + B - A ∪ B，</span><br><span class="line">带入 (1)和(2),的 k &lt; A ∩ B</span><br></pre></td></tr></table></figure>
+
+<p>由以上推导可得，在Raft Group中任取F + 1个Server，这F + 1个Server中至少存在k个coded-fragments。</p>
+<p>由于Rs-code要求至少要k个coded-fragments才能恢复数据，由此满足条件。</p>
+<h5 id="反例"><a href="#反例" class="headerlink" title="反例"></a>反例</h5><p><img src="/2023/03/25/notes-of-craft/image-20230316145948620-1716311.png" alt="image-20230316145948620"></p>
+<p>2 * 3 + 1,七个节点，可以容忍三个节点的failure，（k，m） =  （3，4），<br>即一个日志被code成3个fragment和4个parity，一共7个coded fragment，可以容忍4个fragment的丢失，至少需要3个fragment<br>才能恢复出完整的日志。<br>假设使用 3 + 1即 4个节点应答就commit，例如log3，在T2时刻，仅剩4个节点active，因为只有两个fragment，<br>因此无法恢复出完整的log。</p>
+<h4 id="complete-entry-replication"><a href="#complete-entry-replication" class="headerlink" title="complete-entry replication"></a>complete-entry replication</h4><h5 id="何时触发？"><a href="#何时触发？" class="headerlink" title="何时触发？"></a>何时触发？</h5><p>coded-fragment要求至少有F + k个节点存活，才能保证Liveness属性，因此如果Raft Group内的healthy节点个数在[F + 1, F + k)区间内时，需要转化为complete-entry replication。</p>
+<h5 id="日志提交条件"><a href="#日志提交条件" class="headerlink" title="日志提交条件"></a>日志提交条件</h5><p>和经典raft一致，即日志得到F+1个slave的成功回复后，可以提交。</p>
+<h5 id="优化"><a href="#优化" class="headerlink" title="优化"></a>优化</h5><p>在日志提交后，没有获取到日志的节点可以使用coded-fragment replication来节省Storage cost</p>
+<p>定义参数p，0 ≤ <em>p</em> ≤ F，leader可以首先发送完整日志到F+p个followers，再向剩余的F-p个followers发送fragment。p值的大小和Storage&amp;network cost成正比关系，当p = F时，退化成经典的raft算法。本文的实现中选取的p值为0。</p>
+<p><img src="/2023/03/25/notes-of-craft/image-20230316151703873-1716311.png" alt="image-20230316151703873"></p>
+<h3 id="strategy-prediction"><a href="#strategy-prediction" class="headerlink" title="strategy prediction"></a>strategy prediction</h3><h4 id="算法"><a href="#算法" class="headerlink" title="算法"></a>算法</h4><p>通过心跳信息来确定active Server的个数：</p>
+<ol>
+<li>如果active Serve个数不少于F+k，触发coded-fragment replication</li>
+<li>如果active Server个数少于F+k，触发complete-entry replication</li>
+</ol>
+<p><img src="/2023/03/25/notes-of-craft/image-20230316152248757-1716311.png" alt="image-20230316152248757"></p>
+<h3 id="Newly-elected-Leader"><a href="#Newly-elected-Leader" class="headerlink" title="Newly-elected Leader"></a>Newly-elected Leader</h3><p>对于new elected leader，可能存在以下两种类型的日志：</p>
+<ol>
+<li>commit过的日志，coded-fragment replication 保证了至少有k个fragment可以恢复出此条日志，complete-entry replication保证了其他Server有存储过完整的日志，因此committed log可以在new elected leader上正确的恢复。</li>
+<li>unapply过的日志，没有机制可以保证此条日志可以正确的恢复，CRaft中引入了<em>LeaderPre</em> operation</li>
+</ol>
+<h4 id="LeaderPre-operation"><a href="#LeaderPre-operation" class="headerlink" title="LeaderPre operation"></a><em>LeaderPre</em> operation</h4><h5 id="流程：-2"><a href="#流程：-2" class="headerlink" title="流程："></a>流程：</h5><ol>
+<li>new elected leader查找出本地unapplied code-fragments</li>
+<li>为每条日志向所有的follower发送request</li>
+<li>如果接收到了此条日志的完整副本或者k条fragment，则恢复出此条日志，但不会commit或者apply</li>
+<li>如果无法恢复，删除</li>
+<li>此过程中需要不断向slave发送心跳，防止触发新的选举</li>
+</ol>
+<p><img src="/2023/03/25/notes-of-craft/image-20230316154606324-1716311.png" alt="image-20230316154606324"></p>
+<p>unrecoverable意味着uncommitted，因此删除是harmless的。</p>
+<h5 id="具体证明"><a href="#具体证明" class="headerlink" title="具体证明"></a>具体证明</h5><p>Leader Completeness Property：如果log e在term T被提交，那么e会在所有有更高term的leader中出现，且e不会被更高term中的leader删除。</p>
+<p>反证：</p>
+<p>假设LCP无法被hold，有两种场景：</p>
+<ol>
+<li>e在Term U的新Leader选举时不在Leader的日志中。</li>
+<li>e在Term U的新Leader选举的LeaderPre阶段中被删除了。</li>
+</ol>
+<p>先证明场景1，根据假设，在Term T到Term U之间的所有Leader都持有log e且e没有被LeaderPre阶段删除过，因此e从Term T开始就没有被任何节点删除过。LeaderT将e至少分发给了F+1个节点，LeaderU至少接收到了F+1个节点的投票响应，根据排容原理，F+1 + F+1 =  N + 1 &gt; N,即至少一个节点接受了e日志且给LeaderU投了票。此Server先一定是先接受了e日志，再给LeaderU投票，否则，它会reject LeaderT的AppendEntris RPC。因为e从Term T开始就没有被删除过，且投票给了LeaderU，因此LeaderU的日志一定至少和此节点的日志一样新，因此LeaderU的日志中一定包含了e，这个假设1存在矛盾。（此证明和Raft经典论文的证明思路一致）</p>
+<p>再证明场景2，假设在Term U中e被删除了，有一个无法被恢复的log e1，假设e1不是e，因为e被删除了，因此e1的index一定是小于e的。因为e在Term T中由LeaderT提交且e1的index小于e，因此e1也被提交过。因此e1打破了Leader Completeness Property且index比e小，因此此处矛盾，所以e1一定是e。(这边不是废话吗？论文里假设的就是e在Term U中被删除了)。所以e因为无法正确的恢复而在LeaderPre中被删除。因为e在Term T中被提交，所以至少完整的复制到了F+1个节点上或者以EC Fragment的形式被部分的复制到了至少F+k个节点上，因此e一定是能够被恢复的。此处和假设2产生矛盾。</p>
+<h3 id="Performance"><a href="#Performance" class="headerlink" title="Performance"></a>Performance</h3><h4 id="Overview"><a href="#Overview" class="headerlink" title="Overview"></a>Overview</h4><ol>
+<li>新的Leader选出来后，需要做日志恢复，影响性能</li>
+<li>LeaderPre会延长选举时间，影响可用性</li>
+<li>新选举的Leader恢复所有完整的日志带来的损耗和降低读延迟之间存在取舍</li>
+<li>日志滞后的节点当前无法通过snapshot来同步，snapshot机制在CRaft中要复杂的多</li>
+<li>编解码会消耗CPU</li>
+</ol>
+<h4 id="Latency"><a href="#Latency" class="headerlink" title="Latency"></a>Latency</h4><p><img src="/2023/03/25/notes-of-craft/image-20230316162654905-1716311.png" alt="image-20230316162654905"></p>
+<p>在value size比较小的时候，几乎没有性能区别，在value size比较大的时候，因为CRaft只做coded-fragment分发，因此性能优势明显。（they reduce 20%–45% of latency compared to Raft when <em>N</em> = 5, and 20%–60.8% when <em>N</em> = 7.）</p>
+<h4 id="Throughput"><a href="#Throughput" class="headerlink" title="Throughput"></a>Throughput</h4><p><img src="/2023/03/25/notes-of-craft/image-20230316163237975-1716311.png" alt="image-20230316163237975"></p>
+<p>value size比较大的时候，对于带宽的提升明显，大到临界点时，总带宽会降低，因为遇到了网络拥塞问题（CRaft and RS-Raft can have a 180% improvement on write throughput when <em>N</em> = 5 and 250% when <em>N</em> = 7. Also, the throughput peaks of CRaft and RS-Raft both appear much later than Raft’s. ）</p>
+<h4 id="Network-Cost"><a href="#Network-Cost" class="headerlink" title="Network Cost"></a>Network Cost</h4><p><img src="/2023/03/25/notes-of-craft/image-20230316164326189-1716311.png" alt="image-20230316164326189"></p>
+<p>通过leader端的检测，Craft相较于原始raft协议，在N = 7时，配置不同的k值，raft中leader的数据发送量是Craft的250%~300%</p>
+<h4 id="Liveness"><a href="#Liveness" class="headerlink" title="Liveness"></a>Liveness</h4><p>健康节点数为5时，CRaft的带宽不如Rs-Paxos,因为CRaft必须使用complete-log replication</p>
+<p>健康节点数为4时，Rs-Paxos无法work。</p>
+<table>
+<thead>
+<tr>
+<th>节点数</th>
+<th>CRaft可以容忍的失败节点数</th>
+<th>RS-Paxos可以容忍的失败节点数</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>5</td>
+<td>2</td>
+<td>1</td>
+</tr>
+<tr>
+<td>7</td>
+<td>3</td>
+<td>2</td>
+</tr>
+</tbody></table>
+<p><img src="/2023/03/25/notes-of-craft/image-20230316164936694-1716311.png" alt="image-20230316164936694"></p>
+<h4 id="Recovery-Read"><a href="#Recovery-Read" class="headerlink" title="Recovery Read"></a>Recovery Read</h4><p>当leader发生切换时，在CRaft中，第一次读取可能需要leader做Recovery，因为leader可能只存储了log的部分fragment，假如leader不发生频繁切换，那么CRaft的read延时和Raft类似，在Recovery Read中，相较于Raft，延时为raft的1.4倍左右，当多次读同一个key时，延迟基本相当。</p>
+<p><img src="/2023/03/25/notes-of-craft/image-20230316165402693-1716311.png" alt="image-20230316165402693"></p>
+<h3 id="Conclusion"><a href="#Conclusion" class="headerlink" title="Conclusion"></a>Conclusion</h3><table>
+<thead>
+<tr>
+<th></th>
+<th>Raft</th>
+<th>RS-Paxos</th>
+<th>CRaft</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Storage cost</strong></td>
+<td>2F + 1</td>
+<td>2F / k + 1</td>
+<td>2F / k + 1</td>
+</tr>
+<tr>
+<td><strong>network cost</strong></td>
+<td>2F</td>
+<td>2F / k</td>
+<td>2F / k</td>
+</tr>
+<tr>
+<td><strong>liveness level</strong></td>
+<td>F</td>
+<td>F - (k - 1) / 2</td>
+<td>F</td>
+</tr>
+<tr>
+<td><strong>Commit slave reply cnt</strong></td>
+<td>F + 1</td>
+<td>F + 1</td>
+<td>F + k</td>
+</tr>
+</tbody></table>
+<h3 id="Q-amp-A"><a href="#Q-amp-A" class="headerlink" title="Q&amp;A:"></a>Q&amp;A:</h3><ol>
+<li>m和k之间的约束是什么，在实际的工业场景中，此算法的价值如何？</li>
+</ol>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">现有：m + k = N（1）</span><br><span class="line"></span><br><span class="line">		2F + 1 = N（2）</span><br><span class="line"></span><br><span class="line">需满足：F  + k &lt; N (3)，即不需要commit_all</span><br><span class="line"></span><br><span class="line">由（2）（3）可得：(N - 1) / 2 + k &lt; N，可得k &lt; ( N + 1) / 2 （4）</span><br><span class="line"></span><br><span class="line">由（4）可得：m + k  &lt; m + (N + 1) /2 （5）</span><br><span class="line"></span><br><span class="line">由（1）（5）可得：N &lt; m + (N + 1) /2，可得m &gt; (N - 1) / 2 （6）</span><br><span class="line"></span><br><span class="line">由（2）（6）可得：m &gt; (2F + 1 - 1) / 2，可得m &gt; F</span><br><span class="line"></span><br><span class="line">因为m为整数，所以m至少为F+1。</span><br><span class="line"></span><br><span class="line">当m为F + 1时，由（1）可得，k = F， 此时F + k = 2F，即在最坏的case，要2F个节点确认后才能提交log。</span><br></pre></td></tr></table></figure>
+
+<table>
+<thead>
+<tr>
+<th>k</th>
+<th>m</th>
+<th>commit条件</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>F</td>
+<td>F + 1</td>
+<td>2F</td>
+</tr>
+<tr>
+<td>F - 1</td>
+<td>F + 2</td>
+<td>2F - 1</td>
+</tr>
+<tr>
+<td>F - 2</td>
+<td>F + 3</td>
+<td>2F - 2</td>
+</tr>
+<tr>
+<td>…</td>
+<td>…</td>
+<td>…</td>
+</tr>
+<tr>
+<td>F - x</td>
+<td>F + x + 1</td>
+<td>2F - x</td>
+</tr>
+</tbody></table>
+<p>2F - x &gt;= F + 1,即 x &lt;= F - 1。</p>
+<table>
+<thead>
+<tr>
+<th>k</th>
+<th>m</th>
+<th>commit条件</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>F + 1</td>
+<td>F</td>
+<td>2F + 1</td>
+</tr>
+<tr>
+<td>F + 2</td>
+<td>F - 1</td>
+<td>2F + 2 (无法使用CRaft)</td>
+</tr>
+<tr>
+<td>F + 3</td>
+<td>F - 2</td>
+<td>2F + 3 (无法使用CRaft)</td>
+</tr>
+<tr>
+<td>…</td>
+<td>…</td>
+<td>…</td>
+</tr>
+<tr>
+<td>F + x</td>
+<td>F + x + 1</td>
+<td>2F - x (无法使用CRaft)</td>
+</tr>
+</tbody></table>
+<p>结论：</p>
+<ol>
+<li>按照上面的推导，k比m小的越多，则commit的条件越宽松</li>
+<li>在k大于m的场景中，k最小为F+1,m为F，此时F+k = 2F + 1 = N,为commit_all, k再大的话，不满足条件，无法使用CRaft</li>
+<li>在实际的场景中，k往往比m大，因此CRaft的应用条件比较有限。</li>
+</ol>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/distributed/" rel="tag"># distributed</a>
+              <a href="/tags/raft/" rel="tag"># raft</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2022/05/17/gcc-hello-world/" rel="prev" title="gcc_hello_world">
+      <i class="fa fa-chevron-left"></i> gcc_hello_world
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2023/03/29/Daos-mvcc-and-timestamp-ordering/" rel="next" title="Daos-mvcc-and-timestamp-ordering">
+      Daos-mvcc-and-timestamp-ordering <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#Raft%E5%8D%8F%E8%AE%AE"><span class="nav-number">1.</span> <span class="nav-text">Raft协议</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%B5%81%E7%A8%8B%EF%BC%9A"><span class="nav-number">1.1.</span> <span class="nav-text">流程：</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Raft%E5%8D%8F%E8%AE%AE%E4%BF%9D%E8%AF%81%E4%B8%A4%E4%B8%AAproperties%EF%BC%9A"><span class="nav-number">1.2.</span> <span class="nav-text">Raft协议保证两个properties：</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Erasure-Coding"><span class="nav-number">2.</span> <span class="nav-text">Erasure Coding</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Reed-Solomon-code%EF%BC%88RS-code%EF%BC%89"><span class="nav-number">2.1.</span> <span class="nav-text">Reed-Solomon code（RS-code）</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#%E5%8E%9F%E7%90%86%EF%BC%9A"><span class="nav-number">2.1.0.1.</span> <span class="nav-text">原理：</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#%E5%8D%95%E4%BD%8D%E7%9F%A9%E9%98%B5%EF%BC%9A"><span class="nav-number">2.1.0.2.</span> <span class="nav-text">单位矩阵：</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#%E8%8C%83%E5%BE%B7%E8%92%99%E7%9F%A9%E9%98%B5%EF%BC%88vandermonde-matrix%EF%BC%89%EF%BC%9A"><span class="nav-number">2.1.0.3.</span> <span class="nav-text">范德蒙矩阵（vandermonde matrix）：</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#%E9%80%86%E7%9F%A9%E9%98%B5%EF%BC%9A"><span class="nav-number">2.1.0.4.</span> <span class="nav-text">逆矩阵：</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#%E4%B8%BE%E4%BE%8B%EF%BC%9A"><span class="nav-number">2.1.0.5.</span> <span class="nav-text">举例：</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%AD%A4%E8%AE%BA%E6%96%87%E4%B8%ADRS-code%E7%9A%84%E4%B8%80%E4%BA%9B%E7%9B%B8%E5%85%B3%E5%AE%9A%E4%B9%89%EF%BC%9A"><span class="nav-number">2.1.1.</span> <span class="nav-text">此论文中RS-code的一些相关定义：</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#RS-Paxos"><span class="nav-number">3.</span> <span class="nav-text">RS-Paxos</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#CRaft"><span class="nav-number">4.</span> <span class="nav-text">CRaft</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%AE%BE%E8%AE%A1%E7%9B%AE%E6%A0%87%EF%BC%9A"><span class="nav-number">4.1.</span> <span class="nav-text">设计目标：</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%99%90%E5%88%B6%EF%BC%9A"><span class="nav-number">4.2.</span> <span class="nav-text">限制：</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#coded-fragment-replication-and-complete-entry-replication"><span class="nav-number">4.3.</span> <span class="nav-text">coded-fragment replication and complete-entry replication</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#Coded-fragment-Replication"><span class="nav-number">4.3.1.</span> <span class="nav-text">Coded-fragment Replication</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#%E6%B5%81%E7%A8%8B%EF%BC%9A-1"><span class="nav-number">4.3.1.1.</span> <span class="nav-text">流程：</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#why-F-k"><span class="nav-number">4.3.1.2.</span> <span class="nav-text">why F+k?</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#%E8%AF%81%E6%98%8E%EF%BC%9A"><span class="nav-number">4.3.1.3.</span> <span class="nav-text">证明：</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#%E5%8F%8D%E4%BE%8B"><span class="nav-number">4.3.1.4.</span> <span class="nav-text">反例</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#complete-entry-replication"><span class="nav-number">4.3.2.</span> <span class="nav-text">complete-entry replication</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#%E4%BD%95%E6%97%B6%E8%A7%A6%E5%8F%91%EF%BC%9F"><span class="nav-number">4.3.2.1.</span> <span class="nav-text">何时触发？</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#%E6%97%A5%E5%BF%97%E6%8F%90%E4%BA%A4%E6%9D%A1%E4%BB%B6"><span class="nav-number">4.3.2.2.</span> <span class="nav-text">日志提交条件</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#%E4%BC%98%E5%8C%96"><span class="nav-number">4.3.2.3.</span> <span class="nav-text">优化</span></a></li></ol></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#strategy-prediction"><span class="nav-number">4.4.</span> <span class="nav-text">strategy prediction</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E7%AE%97%E6%B3%95"><span class="nav-number">4.4.1.</span> <span class="nav-text">算法</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Newly-elected-Leader"><span class="nav-number">4.5.</span> <span class="nav-text">Newly-elected Leader</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#LeaderPre-operation"><span class="nav-number">4.5.1.</span> <span class="nav-text">LeaderPre operation</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#%E6%B5%81%E7%A8%8B%EF%BC%9A-2"><span class="nav-number">4.5.1.1.</span> <span class="nav-text">流程：</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#%E5%85%B7%E4%BD%93%E8%AF%81%E6%98%8E"><span class="nav-number">4.5.1.2.</span> <span class="nav-text">具体证明</span></a></li></ol></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Performance"><span class="nav-number">4.6.</span> <span class="nav-text">Performance</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#Overview"><span class="nav-number">4.6.1.</span> <span class="nav-text">Overview</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Latency"><span class="nav-number">4.6.2.</span> <span class="nav-text">Latency</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Throughput"><span class="nav-number">4.6.3.</span> <span class="nav-text">Throughput</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Network-Cost"><span class="nav-number">4.6.4.</span> <span class="nav-text">Network Cost</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Liveness"><span class="nav-number">4.6.5.</span> <span class="nav-text">Liveness</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Recovery-Read"><span class="nav-number">4.6.6.</span> <span class="nav-text">Recovery Read</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Conclusion"><span class="nav-number">4.7.</span> <span class="nav-text">Conclusion</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Q-amp-A"><span class="nav-number">4.8.</span> <span class="nav-text">Q&amp;A:</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Javie Chen</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">12</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">2</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">11</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2023</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Javie Chen</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a>
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 6.0.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="Two-phase Commit经典的2PC流程123456789101112131415client            coordinator           slave              slave  |     txn           |                  |                  |  | -----------------&gt;|">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Daos-2-phase-commit">
+<meta property="og:url" content="http://example.com/2023/04/01/Daos-2-phase-commit/index.html">
+<meta property="og:site_name" content="Saturn">
+<meta property="og:description" content="Two-phase Commit经典的2PC流程123456789101112131415client            coordinator           slave              slave  |     txn           |                  |                  |  | -----------------&gt;|">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="http://example.com/2023/04/01/Daos-2-phase-commit/image-20230329105615285.png">
+<meta property="article:published_time" content="2023-04-01T08:03:03.000Z">
+<meta property="article:modified_time" content="2023-04-17T08:04:43.847Z">
+<meta property="article:author" content="Javie Chen">
+<meta property="article:tag" content="storage">
+<meta property="article:tag" content="DAOS">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://example.com/2023/04/01/Daos-2-phase-commit/image-20230329105615285.png">
+
+<link rel="canonical" href="http://example.com/2023/04/01/Daos-2-phase-commit/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'en'
+  };
+</script>
+
+  <title>Daos-2-phase-commit | Saturn</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Saturn</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">The devil is in the details.</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2023/04/01/Daos-2-phase-commit/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Javie Chen">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Saturn">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Daos-2-phase-commit
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2023-04-01 16:03:03" itemprop="dateCreated datePublished" datetime="2023-04-01T16:03:03+08:00">2023-04-01</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2023-04-17 16:04:43" itemprop="dateModified" datetime="2023-04-17T16:04:43+08:00">2023-04-17</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/knowledge/" itemprop="url" rel="index"><span itemprop="name">knowledge</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1 id="Two-phase-Commit"><a href="#Two-phase-Commit" class="headerlink" title="Two-phase Commit"></a>Two-phase Commit</h1><h2 id="经典的2PC"><a href="#经典的2PC" class="headerlink" title="经典的2PC"></a>经典的2PC</h2><h3 id="流程"><a href="#流程" class="headerlink" title="流程"></a>流程</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">client            coordinator           slave              slave</span><br><span class="line">  |     txn           |                  |                  |</span><br><span class="line">  | -----------------&gt;|                  |                  |</span><br><span class="line">  |                   |-----prepare-----&gt;|                  |</span><br><span class="line">  |                   |-----prepare------------------------&gt;|</span><br><span class="line">  |                   |                  |                  |</span><br><span class="line">  |                   |&lt;--------OK-------|                  |  </span><br><span class="line">  |                   |&lt;--------OK--------------------------|</span><br><span class="line">  |                   |                  |                  |</span><br><span class="line">  |                   |-----commit -----&gt;|                  |</span><br><span class="line">  |                   |-----commit ------------------------&gt;|</span><br><span class="line">  |                   |                  |                  |</span><br><span class="line">  |                   |&lt;-----OK----------|                  |</span><br><span class="line">  |                   |&lt;-----OK-----------------------------|</span><br><span class="line">  |&lt;-----reply--------|                  |                  |</span><br></pre></td></tr></table></figure>
+
+<h3 id="经典2pc中的Coordinator侧的状态转移："><a href="#经典2pc中的Coordinator侧的状态转移：" class="headerlink" title="经典2pc中的Coordinator侧的状态转移："></a>经典2pc中的Coordinator侧的状态转移：</h3><ol>
+<li>接受request执行Operation发送prepared message给所有的参与者，initiated</li>
+<li>接受到所有participants的positive reply，prepared</li>
+<li>发送committ请求给所有的participants, commiting</li>
+<li>接受到所有participants的positive reply，committed</li>
+</ol>
+<h3 id="Redo-amp-undo-log在2pc协议中的作用："><a href="#Redo-amp-undo-log在2pc协议中的作用：" class="headerlink" title="Redo &amp; undo log在2pc协议中的作用："></a>Redo &amp; undo log在2pc协议中的作用：</h3><ol>
+<li>coordinator在Commit Phase发送commit给所有participants之前记录redo log，如果在改动落盘之前coordinator宕机，可以从redo log恢复。</li>
+<li>undo log保证了在Prepared Phase中，如果有slave回复不可提交，可用来abort transaction</li>
+<li>redo log用来容灾，undo log用来恢复事务执行之前的状态。</li>
+</ol>
+<h3 id="Redo-amp-undo-log在2pc中写入的时机："><a href="#Redo-amp-undo-log在2pc中写入的时机：" class="headerlink" title="Redo &amp; undo log在2pc中写入的时机："></a>Redo &amp; undo log在2pc中写入的时机：</h3><ol>
+<li>Coordinator:<ol>
+<li>Prepare Phase, 执行Operation之前记录redolog/undolog</li>
+<li>在提交事务之前，记录transaction到redolog</li>
+</ol>
+</li>
+<li>Non-Coordinator:<ol>
+<li>执行Operation之前记录redolog/undolog</li>
+<li>回复positive Response之后将transaction记录到redolog</li>
+</ol>
+</li>
+</ol>
+<h3 id="Classical-2PC的劣势："><a href="#Classical-2PC的劣势：" class="headerlink" title="Classical 2PC的劣势："></a>Classical 2PC的劣势：</h3><ol>
+<li>阻塞协议，所有的参与者都需要等待coordinator的决策，影响latency</li>
+<li>协调者单点失败：如果coordinator失效，协议无法继续。</li>
+<li>级联回滚：先到的事务回滚会导致后续的事务级联回滚</li>
+<li>参与者单点失败：参与者的失败或者超时，影响latency</li>
+<li>大量的网络通信开销：两个阶段的网络开销随着节点数的增多线性增长</li>
+</ol>
+<h2 id="DAOS-asynchronous-2PC"><a href="#DAOS-asynchronous-2PC" class="headerlink" title="DAOS asynchronous 2PC"></a>DAOS asynchronous 2PC</h2><h3 id="流程："><a href="#流程：" class="headerlink" title="流程："></a>流程：</h3><ol>
+<li>client提交txn</li>
+<li>coordinator接受，本地执行Operation，发送给其他participants</li>
+<li>接受到其他participants的positive Response，标记事务为committable，batch住事务号</li>
+<li>batch的事务号达到阈值，发送二阶段的commit rpc</li>
+<li>coordinator和slave提交事务。</li>
+</ol>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">client            coordinator           slave              slave</span><br><span class="line">  |     txn           |                  |                  |</span><br><span class="line">  | -----------------&gt;|                  |                  |</span><br><span class="line">  |                   |-----prepare-----&gt;|                  |</span><br><span class="line">  |                   |-----prepare------------------------&gt;|</span><br><span class="line">  |                   |                  |                  |</span><br><span class="line">  |                   |&lt;--------OK-------|                  |  </span><br><span class="line">  |                   |&lt;--------OK--------------------------|</span><br><span class="line">  |&lt;-------reply------|                  |                  |</span><br><span class="line">  ...              time elaps           ...                ...</span><br><span class="line">  |                   |                  |                  |</span><br><span class="line">  |                meet batch            |                  |</span><br><span class="line">  |                   |--commit batch---&gt;|                  |</span><br><span class="line">  |                   |--commit batch----------------------&gt;|</span><br><span class="line">  |                   |                  |                  |</span><br><span class="line">  |                   |&lt;-----OK----------|                  |</span><br><span class="line">  |                   |&lt;-----OK-----------------------------|</span><br><span class="line">  |                   |                  |                  |</span><br></pre></td></tr></table></figure>
+
+<h3 id="相对于classical-2PC的改动点"><a href="#相对于classical-2PC的改动点" class="headerlink" title="相对于classical 2PC的改动点"></a>相对于classical 2PC的改动点</h3><ol>
+<li>classical 2PC中coordinator在发送prepare之前写redo/undo 日志，A2PC中是发送之后写日志</li>
+<li>classical 2PC中coordinator需要再二阶段执行完成后才能回复客户端，A2PC中一阶段完成即可回复</li>
+<li>classical 2PC中二阶段的txn都是one by one的处理，A2PC中针对同一Redundancy Group的txns做了batch。</li>
+</ol>
+<h3 id="如何处理改动带来的一致性风险"><a href="#如何处理改动带来的一致性风险" class="headerlink" title="如何处理改动带来的一致性风险"></a>如何处理改动带来的一致性风险</h3><ol>
+<li>coordinator在一阶段发送rpc后才写日志，假如在写日志之前宕机，可能会有两种场景：<ol>
+<li>Prepared消息全部发送到了参与者节点<ol>
+<li>新Coordinator必有这条日志，全部参与者可以提交，Resync协议保证此日志提交</li>
+<li>新Coordinator必有这条日志，至少一个参与者abort，Resync协议保证此日志回滚</li>
+</ol>
+</li>
+<li>Prepared消息部分发送到了参与者节点：<ol>
+<li>新Coordinator有这条日志，由于部分参与者未收到这条Prepare，Resync协议保证此日志回滚</li>
+<li>新Coordinator没有这条日志，不会尝试abort或者commit，客户端Timeout，对此日志在新的Coordinator上发起重试。</li>
+</ol>
+</li>
+</ol>
+</li>
+</ol>
+<h3 id="如何解决batch机制引入的inconsistency"><a href="#如何解决batch机制引入的inconsistency" class="headerlink" title="如何解决batch机制引入的inconsistency"></a>如何解决batch机制引入的inconsistency</h3><p>由于batch机制，Coordinator状态为committable的状态的事务，在participants端可能是prepared的状态，participants端的读写请求如何处理？</p>
+<ol>
+<li>写请求：统一由leader端处理</li>
+<li>读请求：通过redirect到leader端处理或者依赖于refresh流程同步后再处理</li>
+</ol>
+<h3 id="新的Coordinator如何产生"><a href="#新的Coordinator如何产生" class="headerlink" title="新的Coordinator如何产生"></a>新的Coordinator如何产生</h3><ol>
+<li>通过伪哈希算法，在剩余的存活参与者中选出，因为参与者携带了未决事务的信息。</li>
+<li>不能选择Fallback节点作为新的Coordinator，因为FallBack节点没有事务信息，无法执行Resync流程。</li>
+</ol>
+<h3 id="旧的Coordinator如何处理"><a href="#旧的Coordinator如何处理" class="headerlink" title="旧的Coordinator如何处理"></a>旧的Coordinator如何处理</h3><ol>
+<li>暂时下线：在重新上线后，依赖rebuild协议同步事务信息</li>
+<li>永久下线：在FallBack上rebuild事务信息</li>
+</ol>
+<h3 id="Resync"><a href="#Resync" class="headerlink" title="Resync"></a>Resync</h3><h4 id="principals"><a href="#principals" class="headerlink" title="principals"></a>principals</h4><ol>
+<li>存活的节点，有任何节点针对此txn提交为abort或者没有voted log，则此txn回滚</li>
+<li>失联的节点abort了当前事务且至少和一个存活节点确认了abort信息，此txn回滚</li>
+<li>存活的节点对txn1标记为prepared，失联的leader对txn1标记为abort，txn1可以提交。</li>
+</ol>
+<h4 id="流程-1"><a href="#流程-1" class="headerlink" title="流程"></a>流程</h4><ol>
+<li>client发送txn</li>
+<li>leader接受，replicate，将log持久化</li>
+<li>slave接受，将log持久化，处理txn</li>
+<li>slave回复，leader接受</li>
+<li>leader汇总，根据汇总结果abort或者commit</li>
+<li>leader回复client</li>
+<li>leader cache txn，等到batch满发送给slaves</li>
+<li>slave做相应的处理。</li>
+</ol>
+<h4 id="极端例子"><a href="#极端例子" class="headerlink" title="极端例子"></a>极端例子</h4><img src="/2023/04/01/Daos-2-phase-commit/image-20230329105615285.png" alt="image-20230329105615285" style="zoom: 33%;">
+
+<ol>
+<li>T0到达client比T1早，T0和T1之间是冲突关系</li>
+<li>T0在Coordinator执行成功，T1在Coordinator执行失败</li>
+<li>T1的Prepare rpc已经先于T0到达了所有的参与者，且所有参阅者回复positive</li>
+<li>协调者在收到T1的回复之前crash，无法发送abort T1</li>
+<li>在Resync流程中，T1被commit，T0超时，因为crash之前并没有回复客户端，因此不影响一致性</li>
+</ol>
+<h3 id="Refresh"><a href="#Refresh" class="headerlink" title="Refresh"></a>Refresh</h3><h4 id="流程：-1"><a href="#流程：-1" class="headerlink" title="流程："></a>流程：</h4><ol>
+<li>获取需要Refresh的dtx列表</li>
+<li>遍历每个dtx</li>
+<li>查找dtx leader</li>
+<li>如果自己是leader，跳过当前dtx的检查</li>
+<li>初始化</li>
+<li>向leader发送RPC进行事务状态同步</li>
+<li>根据同步的事务结果做相应的处理</li>
+</ol>
+<h1 id="Classical-2PC-amp-asynchronous-2PC对比："><a href="#Classical-2PC-amp-asynchronous-2PC对比：" class="headerlink" title="Classical 2PC &amp; asynchronous 2PC对比："></a>Classical 2PC &amp; asynchronous 2PC对比：</h1><h3 id="asynchronous-2PC解决了哪些问题："><a href="#asynchronous-2PC解决了哪些问题：" class="headerlink" title="asynchronous 2PC解决了哪些问题："></a>asynchronous 2PC解决了哪些问题：</h3><ol>
+<li>Prepare阶段结束后就响应客户端，缓解了阻塞问题，至少节省了一个RTT的时间</li>
+<li>Prepare阶段，不写日志就发rpc，至少节省了一次落盘的时间</li>
+<li>参与者失败，通过SWIM协议在有限时间内发现并启用fallback，协调者失败，通过resync决策事务状态，一定程度上解决了了协调者和参与者的失败问题</li>
+<li>Commit阶段通过batch成组提交，减小网络通信的开销</li>
+<li>级联回滚依然存在</li>
+</ol>
+<h3 id="asynchronous-2PC可能带来那些问题："><a href="#asynchronous-2PC可能带来那些问题：" class="headerlink" title="asynchronous 2PC可能带来那些问题："></a>asynchronous 2PC可能带来那些问题：</h3><ol>
+<li>asynchronous 2PC不是单独可用的协议，需要SWIM协议配合</li>
+<li>引入resync的过程，增加了复杂性</li>
+<li>batch提交引入了额外的复杂性，传统的2PC中，各节点的状态一致，任何节点都可以处理读写请求。在a2PC中，leader会将已经提交的事务的二阶段batch，因此slave节点上的事务状态仍然是Prepared，需要同步信息或者只由leader处理。</li>
+</ol>
+<h1 id="代码"><a href="#代码" class="headerlink" title="代码"></a>代码</h1><h2 id="client端："><a href="#client端：" class="headerlink" title="client端："></a>client端：</h2><h3 id="伪代码："><a href="#伪代码：" class="headerlink" title="伪代码："></a>伪代码：</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line">daos_handle_t tx = DAOS_TX_NONE;</span><br><span class="line">int           rc;</span><br><span class="line"></span><br><span class="line">/* allocate transaction */</span><br><span class="line">rc = daos_tx_open(dfs-&gt;coh, &amp;th, 0, NULL);</span><br><span class="line">if (rc)</span><br><span class="line">	...</span><br><span class="line"></span><br><span class="line">restart:</span><br><span class="line">	/* execute operations under the same transaction */</span><br><span class="line">	rc = daos_obj_fetch(..., th);</span><br><span class="line">	...</span><br><span class="line">	rc = daos_obj_update(..., th);</span><br><span class="line">	...</span><br><span class="line">	if (rc) &#123;</span><br><span class="line">		rc = daos_tx_abort(th, NULL);</span><br><span class="line">		/* either goto restart or exit */</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	rc = daos_tx_commit(th, NULL);</span><br><span class="line">	if (rc) &#123;</span><br><span class="line">		if (rc == -DER_TX_RESTART) &#123;</span><br><span class="line">			/* conflict with another transaction, try again */</span><br><span class="line">			rc = daos_tx_restart(th, NULL);</span><br><span class="line">			goto restart;</span><br><span class="line">		&#125;</span><br><span class="line">		...</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">/* free up all the resources allocated for the transaction */</span><br><span class="line">rc = daos_tx_close(th, NULL);</span><br></pre></td></tr></table></figure>
+
+
+
+<h3 id="关键调用点"><a href="#关键调用点" class="headerlink" title="关键调用点"></a>关键调用点</h3><h4 id="构造task"><a href="#构造task" class="headerlink" title="构造task"></a>构造task</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">int</span><br><span class="line">daos_tx_commit(daos_handle_t th, daos_event_t *ev)</span><br></pre></td></tr></table></figure>
+
+<h4 id="检查txn的状态是否满足提交条件"><a href="#检查txn的状态是否满足提交条件" class="headerlink" title="检查txn的状态是否满足提交条件"></a>检查txn的状态是否满足提交条件</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">int</span><br><span class="line">dc_tx_commit(tse_task_t *task)</span><br></pre></td></tr></table></figure>
+
+<h4 id="发送rpc"><a href="#发送rpc" class="headerlink" title="发送rpc"></a>发送rpc</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">// 检查pool_map_version是够匹配</span><br><span class="line">// dc_tx_commit_prepare,比较复杂，取第一个target作为leader</span><br><span class="line">// 注册回调dc_tx_commit_cb</span><br><span class="line">// 修改事务状态为TX_COMMITTING</span><br><span class="line">// 构造rpc并发送rpc</span><br><span class="line">static int</span><br><span class="line">dc_tx_commit_trigger(tse_task_t *task, struct dc_tx *tx, daos_tx_commit_t *args)</span><br></pre></td></tr></table></figure>
+
+
+
+
+
+<h2 id="Server端"><a href="#Server端" class="headerlink" title="Server端"></a>Server端</h2><h3 id="关键调用点-1"><a href="#关键调用点-1" class="headerlink" title="关键调用点"></a>关键调用点</h3><h4 id="检查冲突，分配内存，为每个子txn分配执行函数"><a href="#检查冲突，分配内存，为每个子txn分配执行函数" class="headerlink" title="检查冲突，分配内存，为每个子txn分配执行函数"></a>检查冲突，分配内存，为每个子txn分配执行函数</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">void</span><br><span class="line">ds_obj_cpd_handler(crt_rpc_t *rpc)</span><br></pre></td></tr></table></figure>
+
+<h4 id="执行Server端的leader操作"><a href="#执行Server端的leader操作" class="headerlink" title="执行Server端的leader操作"></a>执行Server端的leader操作</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">// 执行Server端的leader操作，设置内存栅栏</span><br><span class="line">// 为每个txn的每个tgt执行obj_obj_dtx_leader</span><br><span class="line">static void</span><br><span class="line">ds_obj_dtx_leader_ult(void *arg)</span><br></pre></td></tr></table></figure>
+
+<h4 id="在txn的每个tgt上执行Operation"><a href="#在txn的每个tgt上执行Operation" class="headerlink" title="在txn的每个tgt上执行Operation"></a>在txn的每个tgt上执行Operation</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">static void</span><br><span class="line">ds_obj_dtx_leader(struct daos_cpd_args *dca)</span><br></pre></td></tr></table></figure>
+
+<h4 id="分batch执行"><a href="#分batch执行" class="headerlink" title="分batch执行"></a>分batch执行</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">int</span><br><span class="line">dtx_leader_exec_ops(struct dtx_leader_handle *dlh, dtx_sub_func_t func,</span><br><span class="line">		    dtx_agg_cb_t agg_cb, int allow_failure, void *func_arg)</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<h4 id="leader上的每个tgt执行到的函数"><a href="#leader上的每个tgt执行到的函数" class="headerlink" title="leader上的每个tgt执行到的函数"></a>leader上的每个tgt执行到的函数</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">static int</span><br><span class="line">obj_obj_dtx_leader(struct dtx_leader_handle *dlh, void *arg, int idx,</span><br><span class="line">		   dtx_sub_comp_cb_t comp_cb)</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">static int</span><br><span class="line">ds_cpd_handle_one_wrap(crt_rpc_t *rpc, struct daos_cpd_sub_head *dcsh,</span><br><span class="line">		       struct daos_cpd_disp_ent *dcde, struct daos_cpd_sub_req *dcsrs,</span><br><span class="line">		       struct obj_io_context *ioc, struct dtx_handle *dth)</span><br></pre></td></tr></table></figure>
+
+<h4 id="leader-和-slave上都会执行到的读写接口"><a href="#leader-和-slave上都会执行到的读写接口" class="headerlink" title="leader 和 slave上都会执行到的读写接口"></a>leader 和 slave上都会执行到的读写接口</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">// leader 和 slave上都会执行到的操作</span><br><span class="line">// 执行时机的写入操作，更新ts，此函数比较复杂</span><br><span class="line">static int</span><br><span class="line">ds_cpd_handle_one(crt_rpc_t *rpc, struct daos_cpd_sub_head *dcsh,</span><br><span class="line">		  struct daos_cpd_disp_ent *dcde,</span><br><span class="line">		  struct daos_cpd_sub_req *dcsrs,</span><br><span class="line">		  struct obj_io_context *ioc, struct dtx_handle *dth)</span><br><span class="line">/* Locally process the operations belong to one DTX.</span><br><span class="line"> * Common logic, shared by both leader and non-leader.</span><br><span class="line"> */</span><br></pre></td></tr></table></figure>
+
+<h4 id="2nd-phase"><a href="#2nd-phase" class="headerlink" title="2nd phase"></a>2nd phase</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">int</span><br><span class="line">dtx_leader_end(struct dtx_leader_handle *dlh, struct ds_cont_hdl *coh, int result)</span><br></pre></td></tr></table></figure>
+
+
+
+
+
+
+
+<h2 id="Resync关键调用点"><a href="#Resync关键调用点" class="headerlink" title="Resync关键调用点"></a>Resync关键调用点</h2><h4 id="入口"><a href="#入口" class="headerlink" title="入口"></a>入口</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">// 构造Resync的txn列表</span><br><span class="line">int</span><br><span class="line">dtx_resync(daos_handle_t po_hdl, uuid_t po_uuid, uuid_t co_uuid, uint32_t ver, bool block)</span><br></pre></td></tr></table></figure>
+
+<h4 id="one-by-one的检查"><a href="#one-by-one的检查" class="headerlink" title="one by one的检查"></a>one by one的检查</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">// 在这个function中one by one的检查</span><br><span class="line">// 如果返回的结果是DSHR_NEED_COMMIT，batch住txn，等待提交</span><br><span class="line">// 否则不会提交</span><br><span class="line">static int</span><br><span class="line">dtx_status_handle(struct dtx_resync_args *dra)</span><br></pre></td></tr></table></figure>
+
+<h4 id="检查某一个entry"><a href="#检查某一个entry" class="headerlink" title="检查某一个entry"></a>检查某一个entry</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">// 检查某一个entry</span><br><span class="line">// 返回commit，则返给上层提交</span><br><span class="line">int</span><br><span class="line">dtx_status_handle_one(struct ds_cont_child *cont, struct dtx_entry *dte,</span><br><span class="line">		      daos_epoch_t epoch, int *tgt_array, int *err)</span><br></pre></td></tr></table></figure>
+
+<h4 id="发送rpc同步Commit信息"><a href="#发送rpc同步Commit信息" class="headerlink" title="发送rpc同步Commit信息"></a>发送rpc同步Commit信息</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">int</span><br><span class="line">dtx_check(struct ds_cont_child *cont, struct dtx_entry *dte, daos_epoch_t epoch)</span><br></pre></td></tr></table></figure>
+
+<h4 id="DTX-Check的逻辑"><a href="#DTX-Check的逻辑" class="headerlink" title="DTX Check的逻辑"></a>DTX Check的逻辑</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">static void</span><br><span class="line">dtx_handler(crt_rpc_t *rpc)</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<h4 id="rpc处理"><a href="#rpc处理" class="headerlink" title="rpc处理"></a>rpc处理</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">static int</span><br><span class="line">dtx_rpc_internal(struct dtx_common_args *dca)</span><br></pre></td></tr></table></figure>
+
+<h4 id="rpc发送"><a href="#rpc发送" class="headerlink" title="rpc发送"></a>rpc发送</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">static int</span><br><span class="line">dtx_req_list_send(struct dtx_common_args *dca, daos_epoch_t epoch, int len)</span><br></pre></td></tr></table></figure>
+
+<h4 id="回调汇总"><a href="#回调汇总" class="headerlink" title="回调汇总"></a>回调汇总</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">// 所有peers检查后的结果汇总回调</span><br><span class="line">// Resync principals</span><br><span class="line">static void</span><br><span class="line">dtx_req_list_cb(void **args)</span><br></pre></td></tr></table></figure>
+
+
+
+<h2 id="Refresh关键调用点"><a href="#Refresh关键调用点" class="headerlink" title="Refresh关键调用点"></a>Refresh关键调用点</h2><h3 id="server-A"><a href="#server-A" class="headerlink" title="server A"></a>server A</h3><h4 id="触发refresh"><a href="#触发refresh" class="headerlink" title="触发refresh"></a>触发refresh</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">int</span><br><span class="line">dtx_refresh_internal(struct ds_cont_child *cont, int *check_count,</span><br><span class="line">		     d_list_t *check_list, d_list_t *cmt_list,</span><br><span class="line">		     d_list_t *abt_list, d_list_t *act_list, bool failout)</span><br><span class="line">// 删选出leader不是当前节点的dtx列表</span><br></pre></td></tr></table></figure>
+
+<h4 id="准备rpc并发送给Leader"><a href="#准备rpc并发送给Leader" class="headerlink" title="准备rpc并发送给Leader"></a>准备rpc并发送给Leader</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">// 为leader不是当前节点的所有dtx发送rpc</span><br><span class="line">rc = dtx_rpc_prep(cont, &amp;head, NULL, len, DTX_REFRESH, 0,</span><br><span class="line">				  cmt_list, abt_list, act_list, &amp;dca);</span><br><span class="line">rc = dtx_rpc_post(&amp;dca, rc);</span><br></pre></td></tr></table></figure>
+
+<h4 id="处理leader不是当前节点的所有dtx的检查结果"><a href="#处理leader不是当前节点的所有dtx的检查结果" class="headerlink" title="处理leader不是当前节点的所有dtx的检查结果"></a>处理leader不是当前节点的所有dtx的检查结果</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">d_list_for_each_entry_safe(dsp, tmp, cmt_list, dsp_link) // 处理可提交的事务</span><br><span class="line">d_list_for_each_entry_safe(dsp, tmp, abt_list, dsp_link) // 处理可bort的事务</span><br><span class="line">d_list_for_each_entry_safe(dsp, tmp, act_list, dsp_link) // 处理uncertain和inprogress的事务</span><br></pre></td></tr></table></figure>
+
+<h4 id="遍历处理leader即为当前节点的每个dtx"><a href="#遍历处理leader即为当前节点的每个dtx" class="headerlink" title="遍历处理leader即为当前节点的每个dtx"></a>遍历处理leader即为当前节点的每个dtx</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">d_list_for_each_entry_safe(dsp, tmp, &amp;self, dsp_link)</span><br></pre></td></tr></table></figure>
+
+<h4 id="为每个dtx做检查"><a href="#为每个dtx做检查" class="headerlink" title="为每个dtx做检查"></a>为每个dtx做检查</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">int</span><br><span class="line">dtx_status_handle_one(struct ds_cont_child *cont, struct dtx_entry *dte,</span><br><span class="line">		      daos_epoch_t epoch, int *tgt_array, int *err)</span><br><span class="line">// 根据检查返回的结果做相应的处理</span><br></pre></td></tr></table></figure>
+
+
+
+<h3 id="Leader端"><a href="#Leader端" class="headerlink" title="Leader端"></a>Leader端</h3><h4 id="处理refresh-rpc"><a href="#处理refresh-rpc" class="headerlink" title="处理refresh rpc"></a>处理refresh rpc</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">static void</span><br><span class="line">dtx_handler(crt_rpc_t *rpc)</span><br><span class="line">case DTX_REFRESH分支</span><br></pre></td></tr></table></figure>
+
+<h4 id="调用vos来做检查"><a href="#调用vos来做检查" class="headerlink" title="调用vos来做检查"></a>调用vos来做检查</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">int</span><br><span class="line">vos_dtx_check(daos_handle_t coh, struct dtx_id *dti, daos_epoch_t *epoch,</span><br><span class="line">	      uint32_t *pm_ver, struct dtx_memberships **mbs, struct dtx_cos_key *dck,</span><br><span class="line">	      bool for_refresh)</span><br></pre></td></tr></table></figure>
+
+<p>根据返回结果逐个处理dtx</p>
+<h2 id="Q-amp-A"><a href="#Q-amp-A" class="headerlink" title="Q&amp;A"></a>Q&amp;A</h2><ol>
+<li><p>rebuild结束后才能开始Resync吗？</p>
+<p>论文中没有明确提及。</p>
+</li>
+<li><p>一个事务中会有多个Operation，如果是replication协议，那么为什么≤还要引入两阶段提交？</p>
+<p>Daos中的raft只用在pool或者Container service的主从之间同步状态，不用于数据的replication。</p>
+</li>
+<li><p>classical 2PC中Prepared的语义和a2PC中语义的区别</p>
+<p>classical 2PC中，coordinator接收到所有其他participants节点的positive reply后标记事务状态为Prepared</p>
+<p>a2PC中，coordinator或者其他节点，只要执行完了事务的operations，即可认为是Prepared状态。</p>
+</li>
+<li><p>DTE_ORPHAN是如何处理的？</p>
+</li>
+</ol>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/storage/" rel="tag"># storage</a>
+              <a href="/tags/DAOS/" rel="tag"># DAOS</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2023/03/29/Daos-mvcc-and-timestamp-ordering/" rel="prev" title="Daos-mvcc-and-timestamp-ordering">
+      <i class="fa fa-chevron-left"></i> Daos-mvcc-and-timestamp-ordering
+    </a></div>
+      <div class="post-nav-item"></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#Two-phase-Commit"><span class="nav-number">1.</span> <span class="nav-text">Two-phase Commit</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%BB%8F%E5%85%B8%E7%9A%842PC"><span class="nav-number">1.1.</span> <span class="nav-text">经典的2PC</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%B5%81%E7%A8%8B"><span class="nav-number">1.1.1.</span> <span class="nav-text">流程</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%BB%8F%E5%85%B82pc%E4%B8%AD%E7%9A%84Coordinator%E4%BE%A7%E7%9A%84%E7%8A%B6%E6%80%81%E8%BD%AC%E7%A7%BB%EF%BC%9A"><span class="nav-number">1.1.2.</span> <span class="nav-text">经典2pc中的Coordinator侧的状态转移：</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Redo-amp-undo-log%E5%9C%A82pc%E5%8D%8F%E8%AE%AE%E4%B8%AD%E7%9A%84%E4%BD%9C%E7%94%A8%EF%BC%9A"><span class="nav-number">1.1.3.</span> <span class="nav-text">Redo &amp; undo log在2pc协议中的作用：</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Redo-amp-undo-log%E5%9C%A82pc%E4%B8%AD%E5%86%99%E5%85%A5%E7%9A%84%E6%97%B6%E6%9C%BA%EF%BC%9A"><span class="nav-number">1.1.4.</span> <span class="nav-text">Redo &amp; undo log在2pc中写入的时机：</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Classical-2PC%E7%9A%84%E5%8A%A3%E5%8A%BF%EF%BC%9A"><span class="nav-number">1.1.5.</span> <span class="nav-text">Classical 2PC的劣势：</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#DAOS-asynchronous-2PC"><span class="nav-number">1.2.</span> <span class="nav-text">DAOS asynchronous 2PC</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%B5%81%E7%A8%8B%EF%BC%9A"><span class="nav-number">1.2.1.</span> <span class="nav-text">流程：</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%9B%B8%E5%AF%B9%E4%BA%8Eclassical-2PC%E7%9A%84%E6%94%B9%E5%8A%A8%E7%82%B9"><span class="nav-number">1.2.2.</span> <span class="nav-text">相对于classical 2PC的改动点</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%A6%82%E4%BD%95%E5%A4%84%E7%90%86%E6%94%B9%E5%8A%A8%E5%B8%A6%E6%9D%A5%E7%9A%84%E4%B8%80%E8%87%B4%E6%80%A7%E9%A3%8E%E9%99%A9"><span class="nav-number">1.2.3.</span> <span class="nav-text">如何处理改动带来的一致性风险</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%A6%82%E4%BD%95%E8%A7%A3%E5%86%B3batch%E6%9C%BA%E5%88%B6%E5%BC%95%E5%85%A5%E7%9A%84inconsistency"><span class="nav-number">1.2.4.</span> <span class="nav-text">如何解决batch机制引入的inconsistency</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%96%B0%E7%9A%84Coordinator%E5%A6%82%E4%BD%95%E4%BA%A7%E7%94%9F"><span class="nav-number">1.2.5.</span> <span class="nav-text">新的Coordinator如何产生</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%97%A7%E7%9A%84Coordinator%E5%A6%82%E4%BD%95%E5%A4%84%E7%90%86"><span class="nav-number">1.2.6.</span> <span class="nav-text">旧的Coordinator如何处理</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Resync"><span class="nav-number">1.2.7.</span> <span class="nav-text">Resync</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#principals"><span class="nav-number">1.2.7.1.</span> <span class="nav-text">principals</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%B5%81%E7%A8%8B-1"><span class="nav-number">1.2.7.2.</span> <span class="nav-text">流程</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%9E%81%E7%AB%AF%E4%BE%8B%E5%AD%90"><span class="nav-number">1.2.7.3.</span> <span class="nav-text">极端例子</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Refresh"><span class="nav-number">1.2.8.</span> <span class="nav-text">Refresh</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%B5%81%E7%A8%8B%EF%BC%9A-1"><span class="nav-number">1.2.8.1.</span> <span class="nav-text">流程：</span></a></li></ol></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Classical-2PC-amp-asynchronous-2PC%E5%AF%B9%E6%AF%94%EF%BC%9A"><span class="nav-number">2.</span> <span class="nav-text">Classical 2PC &amp; asynchronous 2PC对比：</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#asynchronous-2PC%E8%A7%A3%E5%86%B3%E4%BA%86%E5%93%AA%E4%BA%9B%E9%97%AE%E9%A2%98%EF%BC%9A"><span class="nav-number">2.0.1.</span> <span class="nav-text">asynchronous 2PC解决了哪些问题：</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#asynchronous-2PC%E5%8F%AF%E8%83%BD%E5%B8%A6%E6%9D%A5%E9%82%A3%E4%BA%9B%E9%97%AE%E9%A2%98%EF%BC%9A"><span class="nav-number">2.0.2.</span> <span class="nav-text">asynchronous 2PC可能带来那些问题：</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E4%BB%A3%E7%A0%81"><span class="nav-number">3.</span> <span class="nav-text">代码</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#client%E7%AB%AF%EF%BC%9A"><span class="nav-number">3.1.</span> <span class="nav-text">client端：</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BC%AA%E4%BB%A3%E7%A0%81%EF%BC%9A"><span class="nav-number">3.1.1.</span> <span class="nav-text">伪代码：</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%85%B3%E9%94%AE%E8%B0%83%E7%94%A8%E7%82%B9"><span class="nav-number">3.1.2.</span> <span class="nav-text">关键调用点</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%9E%84%E9%80%A0task"><span class="nav-number">3.1.2.1.</span> <span class="nav-text">构造task</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%A3%80%E6%9F%A5txn%E7%9A%84%E7%8A%B6%E6%80%81%E6%98%AF%E5%90%A6%E6%BB%A1%E8%B6%B3%E6%8F%90%E4%BA%A4%E6%9D%A1%E4%BB%B6"><span class="nav-number">3.1.2.2.</span> <span class="nav-text">检查txn的状态是否满足提交条件</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%8F%91%E9%80%81rpc"><span class="nav-number">3.1.2.3.</span> <span class="nav-text">发送rpc</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Server%E7%AB%AF"><span class="nav-number">3.2.</span> <span class="nav-text">Server端</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%85%B3%E9%94%AE%E8%B0%83%E7%94%A8%E7%82%B9-1"><span class="nav-number">3.2.1.</span> <span class="nav-text">关键调用点</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%A3%80%E6%9F%A5%E5%86%B2%E7%AA%81%EF%BC%8C%E5%88%86%E9%85%8D%E5%86%85%E5%AD%98%EF%BC%8C%E4%B8%BA%E6%AF%8F%E4%B8%AA%E5%AD%90txn%E5%88%86%E9%85%8D%E6%89%A7%E8%A1%8C%E5%87%BD%E6%95%B0"><span class="nav-number">3.2.1.1.</span> <span class="nav-text">检查冲突，分配内存，为每个子txn分配执行函数</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%89%A7%E8%A1%8CServer%E7%AB%AF%E7%9A%84leader%E6%93%8D%E4%BD%9C"><span class="nav-number">3.2.1.2.</span> <span class="nav-text">执行Server端的leader操作</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%9C%A8txn%E7%9A%84%E6%AF%8F%E4%B8%AAtgt%E4%B8%8A%E6%89%A7%E8%A1%8COperation"><span class="nav-number">3.2.1.3.</span> <span class="nav-text">在txn的每个tgt上执行Operation</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%88%86batch%E6%89%A7%E8%A1%8C"><span class="nav-number">3.2.1.4.</span> <span class="nav-text">分batch执行</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#leader%E4%B8%8A%E7%9A%84%E6%AF%8F%E4%B8%AAtgt%E6%89%A7%E8%A1%8C%E5%88%B0%E7%9A%84%E5%87%BD%E6%95%B0"><span class="nav-number">3.2.1.5.</span> <span class="nav-text">leader上的每个tgt执行到的函数</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#leader-%E5%92%8C-slave%E4%B8%8A%E9%83%BD%E4%BC%9A%E6%89%A7%E8%A1%8C%E5%88%B0%E7%9A%84%E8%AF%BB%E5%86%99%E6%8E%A5%E5%8F%A3"><span class="nav-number">3.2.1.6.</span> <span class="nav-text">leader 和 slave上都会执行到的读写接口</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#2nd-phase"><span class="nav-number">3.2.1.7.</span> <span class="nav-text">2nd phase</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Resync%E5%85%B3%E9%94%AE%E8%B0%83%E7%94%A8%E7%82%B9"><span class="nav-number">3.3.</span> <span class="nav-text">Resync关键调用点</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%85%A5%E5%8F%A3"><span class="nav-number">3.3.0.1.</span> <span class="nav-text">入口</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#one-by-one%E7%9A%84%E6%A3%80%E6%9F%A5"><span class="nav-number">3.3.0.2.</span> <span class="nav-text">one by one的检查</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%A3%80%E6%9F%A5%E6%9F%90%E4%B8%80%E4%B8%AAentry"><span class="nav-number">3.3.0.3.</span> <span class="nav-text">检查某一个entry</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%8F%91%E9%80%81rpc%E5%90%8C%E6%AD%A5Commit%E4%BF%A1%E6%81%AF"><span class="nav-number">3.3.0.4.</span> <span class="nav-text">发送rpc同步Commit信息</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#DTX-Check%E7%9A%84%E9%80%BB%E8%BE%91"><span class="nav-number">3.3.0.5.</span> <span class="nav-text">DTX Check的逻辑</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#rpc%E5%A4%84%E7%90%86"><span class="nav-number">3.3.0.6.</span> <span class="nav-text">rpc处理</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#rpc%E5%8F%91%E9%80%81"><span class="nav-number">3.3.0.7.</span> <span class="nav-text">rpc发送</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%9B%9E%E8%B0%83%E6%B1%87%E6%80%BB"><span class="nav-number">3.3.0.8.</span> <span class="nav-text">回调汇总</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Refresh%E5%85%B3%E9%94%AE%E8%B0%83%E7%94%A8%E7%82%B9"><span class="nav-number">3.4.</span> <span class="nav-text">Refresh关键调用点</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#server-A"><span class="nav-number">3.4.1.</span> <span class="nav-text">server A</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E8%A7%A6%E5%8F%91refresh"><span class="nav-number">3.4.1.1.</span> <span class="nav-text">触发refresh</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%87%86%E5%A4%87rpc%E5%B9%B6%E5%8F%91%E9%80%81%E7%BB%99Leader"><span class="nav-number">3.4.1.2.</span> <span class="nav-text">准备rpc并发送给Leader</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%A4%84%E7%90%86leader%E4%B8%8D%E6%98%AF%E5%BD%93%E5%89%8D%E8%8A%82%E7%82%B9%E7%9A%84%E6%89%80%E6%9C%89dtx%E7%9A%84%E6%A3%80%E6%9F%A5%E7%BB%93%E6%9E%9C"><span class="nav-number">3.4.1.3.</span> <span class="nav-text">处理leader不是当前节点的所有dtx的检查结果</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E9%81%8D%E5%8E%86%E5%A4%84%E7%90%86leader%E5%8D%B3%E4%B8%BA%E5%BD%93%E5%89%8D%E8%8A%82%E7%82%B9%E7%9A%84%E6%AF%8F%E4%B8%AAdtx"><span class="nav-number">3.4.1.4.</span> <span class="nav-text">遍历处理leader即为当前节点的每个dtx</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E4%B8%BA%E6%AF%8F%E4%B8%AAdtx%E5%81%9A%E6%A3%80%E6%9F%A5"><span class="nav-number">3.4.1.5.</span> <span class="nav-text">为每个dtx做检查</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Leader%E7%AB%AF"><span class="nav-number">3.4.2.</span> <span class="nav-text">Leader端</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%A4%84%E7%90%86refresh-rpc"><span class="nav-number">3.4.2.1.</span> <span class="nav-text">处理refresh rpc</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E8%B0%83%E7%94%A8vos%E6%9D%A5%E5%81%9A%E6%A3%80%E6%9F%A5"><span class="nav-number">3.4.2.2.</span> <span class="nav-text">调用vos来做检查</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Q-amp-A"><span class="nav-number">3.5.</span> <span class="nav-text">Q&amp;A</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Javie Chen</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">12</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">2</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">11</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2023</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Javie Chen</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a>
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>
