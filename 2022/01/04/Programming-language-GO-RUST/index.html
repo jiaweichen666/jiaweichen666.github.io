@@ -20,16 +20,19 @@
     var CONFIG = {"hostname":"example.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
   </script>
 
-  <meta name="description" content="[TOC] Go 常量  定义格式 const Name [Type] &#x3D; Value   变量  定义格式 var Name [Type] 系统自动赋予初值 全局变量希望能被外部包所使用，则需要将变量首字母大写 函数体内定义的变量为局部变量，否则为全局变量 可以省去Type，变量在被赋值时编辑器会在编译阶段做类型推断 当你在函数体内声明局部变量时，应使用简短声明语法 :&#x3D; 值类型和引用类型 值类">
+  <meta name="description" content="Go 常量  定义格式 const Name [Type] &#x3D; Value   变量  定义格式 var Name [Type] 系统自动赋予初值 全局变量希望能被外部包所使用，则需要将变量首字母大写 函数体内定义的变量为局部变量，否则为全局变量 可以省去Type，变量在被赋值时编辑器会在编译阶段做类型推断 当你在函数体内声明局部变量时，应使用简短声明语法 :&#x3D; 值类型和引用类型 值类型用等号赋值">
 <meta property="og:type" content="article">
 <meta property="og:title" content="Programming language GO &amp; RUST">
 <meta property="og:url" content="http://example.com/2022/01/04/Programming-language-GO-RUST/index.html">
 <meta property="og:site_name" content="Saturn">
-<meta property="og:description" content="[TOC] Go 常量  定义格式 const Name [Type] &#x3D; Value   变量  定义格式 var Name [Type] 系统自动赋予初值 全局变量希望能被外部包所使用，则需要将变量首字母大写 函数体内定义的变量为局部变量，否则为全局变量 可以省去Type，变量在被赋值时编辑器会在编译阶段做类型推断 当你在函数体内声明局部变量时，应使用简短声明语法 :&#x3D; 值类型和引用类型 值类">
+<meta property="og:description" content="Go 常量  定义格式 const Name [Type] &#x3D; Value   变量  定义格式 var Name [Type] 系统自动赋予初值 全局变量希望能被外部包所使用，则需要将变量首字母大写 函数体内定义的变量为局部变量，否则为全局变量 可以省去Type，变量在被赋值时编辑器会在编译阶段做类型推断 当你在函数体内声明局部变量时，应使用简短声明语法 :&#x3D; 值类型和引用类型 值类型用等号赋值">
 <meta property="og:locale" content="en_US">
 <meta property="article:published_time" content="2022-01-04T02:41:13.000Z">
-<meta property="article:modified_time" content="2022-01-04T02:41:30.446Z">
+<meta property="article:modified_time" content="2023-04-17T06:24:55.743Z">
 <meta property="article:author" content="Javie Chen">
+<meta property="article:tag" content="tool">
+<meta property="article:tag" content="Golang">
+<meta property="article:tag" content="Rust">
 <meta name="twitter:card" content="summary">
 
 <link rel="canonical" href="http://example.com/2022/01/04/Programming-language-GO-RUST/">
@@ -188,9 +191,24 @@
                 <i class="far fa-calendar"></i>
               </span>
               <span class="post-meta-item-text">Posted on</span>
-              
 
-              <time title="Created: 2022-01-04 10:41:13 / Modified: 10:41:30" itemprop="dateCreated datePublished" datetime="2022-01-04T10:41:13+08:00">2022-01-04</time>
+              <time title="Created: 2022-01-04 10:41:13" itemprop="dateCreated datePublished" datetime="2022-01-04T10:41:13+08:00">2022-01-04</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2023-04-17 14:24:55" itemprop="dateModified" datetime="2023-04-17T14:24:55+08:00">2023-04-17</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Programming-language/" itemprop="url" rel="index"><span itemprop="name">Programming language</span></a>
+                </span>
             </span>
 
           
@@ -204,8 +222,7 @@
     <div class="post-body" itemprop="articleBody">
 
       
-        <p>[TOC]</p>
-<h2 id="Go"><a href="#Go" class="headerlink" title="Go"></a>Go</h2><ol>
+        <h2 id="Go"><a href="#Go" class="headerlink" title="Go"></a>Go</h2><ol>
 <li><p>常量</p>
 <ol>
 <li>定义格式 const Name [Type] = Value</li>
@@ -1739,6 +1756,11 @@ items[i][1] = 2
     
 
       <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/tool/" rel="tag"># tool</a>
+              <a href="/tags/Golang/" rel="tag"># Golang</a>
+              <a href="/tags/Rust/" rel="tag"># Rust</a>
+          </div>
 
         
 
@@ -1750,8 +1772,8 @@ items[i][1] = 2
       <i class="fa fa-chevron-left"></i> Distributed protocol
     </a></div>
       <div class="post-nav-item">
-    <a href="/2022/01/04/Dkey-Array-Object-update/" rel="next" title="Dkey-Array Object update">
-      Dkey-Array Object update <i class="fa fa-chevron-right"></i>
+    <a href="/2022/01/04/Linux%20core/" rel="next" title="Something about linux core">
+      Something about linux core <i class="fa fa-chevron-right"></i>
     </a></div>
     </div>
       </footer>
@@ -1825,9 +1847,21 @@ items[i][1] = 2
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">10</span>
+          <span class="site-state-item-count">9</span>
           <span class="site-state-item-name">posts</span>
         </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">2</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">9</span>
+        <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
 </div>

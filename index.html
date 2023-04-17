@@ -184,10 +184,16 @@
                 <i class="far fa-calendar"></i>
               </span>
               <span class="post-meta-item-text">Posted on</span>
-              
 
-              <time title="Created: 2022-05-17 16:24:10 / Modified: 16:24:59" itemprop="dateCreated datePublished" datetime="2022-05-17T16:24:10+08:00">2022-05-17</time>
+              <time title="Created: 2022-05-17 16:24:10" itemprop="dateCreated datePublished" datetime="2022-05-17T16:24:10+08:00">2022-05-17</time>
             </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2023-04-17 14:25:03" itemprop="dateModified" datetime="2023-04-17T14:25:03+08:00">2023-04-17</time>
+              </span>
 
           
 
@@ -343,9 +349,24 @@
                 <i class="far fa-calendar"></i>
               </span>
               <span class="post-meta-item-text">Posted on</span>
-              
 
-              <time title="Created: 2022-05-13 09:32:05 / Modified: 09:34:20" itemprop="dateCreated datePublished" datetime="2022-05-13T09:32:05+08:00">2022-05-13</time>
+              <time title="Created: 2022-05-13 09:32:05" itemprop="dateCreated datePublished" datetime="2022-05-13T09:32:05+08:00">2022-05-13</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2023-04-17 14:22:51" itemprop="dateModified" datetime="2023-04-17T14:22:51+08:00">2023-04-17</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/knowledge/" itemprop="url" rel="index"><span itemprop="name">knowledge</span></a>
+                </span>
             </span>
 
           
@@ -453,7 +474,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
-    <link itemprop="mainEntityOfPage" href="http://example.com/2022/01/26/Bloom-Filter/">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2022/02/04/DAOS-simple-obj-example/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.gif">
@@ -467,7 +488,7 @@
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
           
-            <a href="/2022/01/26/Bloom-Filter/" class="post-title-link" itemprop="url">Bloom_Filter</a>
+            <a href="/2022/02/04/DAOS-simple-obj-example/" class="post-title-link" itemprop="url">DAOS-simple-obj-example</a>
         </h2>
 
         <div class="post-meta">
@@ -476,84 +497,24 @@
                 <i class="far fa-calendar"></i>
               </span>
               <span class="post-meta-item-text">Posted on</span>
-              
 
-              <time title="Created: 2022-01-26 17:13:33 / Modified: 17:13:58" itemprop="dateCreated datePublished" datetime="2022-01-26T17:13:33+08:00">2022-01-26</time>
+              <time title="Created: 2022-02-04 10:41:13" itemprop="dateCreated datePublished" datetime="2022-02-04T10:41:13+08:00">2022-02-04</time>
             </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h1 id="Bloom-Filter"><a href="#Bloom-Filter" class="headerlink" title="Bloom Filter"></a>Bloom Filter</h1><h2 id="作用"><a href="#作用" class="headerlink" title="作用"></a>作用</h2><p>可以告诉程序，某个值一定不存在或者可能存在。带有概率性的结论</p>
-<h2 id="优点"><a href="#优点" class="headerlink" title="优点"></a>优点</h2><p>高效、占用空间小</p>
-<h2 id="缺点"><a href="#缺点" class="headerlink" title="缺点"></a>缺点</h2><p>结论是概率性的，存在false positive的可能，即有个值实际上不存在，但是BF告诉我，值存在。</p>
-<h2 id="实现机制"><a href="#实现机制" class="headerlink" title="实现机制"></a>实现机制</h2><p><img src="https://tva1.sinaimg.cn/large/008i3skNgy1gyr6lp0apij30rl0g4aat.jpg" alt="image-20220126170232622"></p>
-<p>使用一个bitMap和若干个hash函数。</p>
-<ul>
-<li>put Key A：A key 进来时，使用提供的若干hash函数算的几个位置的值，将这些位置的值置为1。</li>
-<li>check key A existence: 检查A key是否存在，使用提供的若干hash函数算出若干index，检查这些index上的值是否都为1。<ul>
-<li>如果都为1：key A可能存在，因为存在其他key将key A的位置都置为了1的可能性</li>
-<li>如果有任何一个index上不为1：key A一定不存在</li>
-</ul>
-</li>
-</ul>
-<h2 id="使用场景："><a href="#使用场景：" class="headerlink" title="使用场景："></a>使用场景：</h2><ol>
-<li>利用BF减少磁盘IO或者网络请求，如果key不存在，则直接短路返回</li>
-<li>利用BF查找key是否存在，可能会返回错误的预判</li>
-</ol>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
-    <link itemprop="mainEntityOfPage" href="http://example.com/2022/01/05/DAOS-simple-obj-example/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="Javie Chen">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Saturn">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2022/01/05/DAOS-simple-obj-example/" class="post-title-link" itemprop="url">Untitled</a>
-        </h2>
-
-        <div class="post-meta">
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2023-04-17 14:21:47" itemprop="dateModified" datetime="2023-04-17T14:21:47+08:00">2023-04-17</time>
+              </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
+                <i class="far fa-folder"></i>
               </span>
-              <span class="post-meta-item-text">Posted on</span>
-              
-
-              <time title="Created: 2022-01-05 14:51:03 / Modified: 15:03:10" itemprop="dateCreated datePublished" datetime="2022-01-05T14:51:03+08:00">2022-01-05</time>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/knowledge/" itemprop="url" rel="index"><span itemprop="name">knowledge</span></a>
+                </span>
             </span>
 
           
@@ -1022,9 +983,24 @@
                 <i class="far fa-calendar"></i>
               </span>
               <span class="post-meta-item-text">Posted on</span>
-              
 
-              <time title="Created: 2022-01-04 17:50:56 / Modified: 17:51:09" itemprop="dateCreated datePublished" datetime="2022-01-04T17:50:56+08:00">2022-01-04</time>
+              <time title="Created: 2022-01-04 17:50:56" itemprop="dateCreated datePublished" datetime="2022-01-04T17:50:56+08:00">2022-01-04</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2023-04-17 14:22:35" itemprop="dateModified" datetime="2023-04-17T14:22:35+08:00">2023-04-17</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/knowledge/" itemprop="url" rel="index"><span itemprop="name">knowledge</span></a>
+                </span>
             </span>
 
           
@@ -1344,6 +1320,111 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2022/01/04/Linux%20core/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Javie Chen">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Saturn">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2022/01/04/Linux%20core/" class="post-title-link" itemprop="url">Something about linux core</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2022-01-04 10:41:13" itemprop="dateCreated datePublished" datetime="2022-01-04T10:41:13+08:00">2022-01-04</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2023-04-17 14:24:46" itemprop="dateModified" datetime="2023-04-17T14:24:46+08:00">2023-04-17</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/knowledge/" itemprop="url" rel="index"><span itemprop="name">knowledge</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="内存管理"><a href="#内存管理" class="headerlink" title="内存管理"></a>内存管理</h1><ol>
+<li><p>页：MMU管理的基本单位</p>
+</li>
+<li><p>区：</p>
+<ol>
+<li><p>ZONE_DMA</p>
+</li>
+<li><p>ZONE_DMA32</p>
+</li>
+<li><p>ZONE_NORMAL</p>
+</li>
+<li><p>ZONE_HIGHEM</p>
+<p>![image-20211227135455605](/Users/chenjiawei/Library/Application Support/typora-user-images/image-20211227135455605.png)</p>
+</li>
+</ol>
+</li>
+</ol>
+<h1 id="块IO"><a href="#块IO" class="headerlink" title="块IO"></a>块IO</h1><ol>
+<li>块设备中最小的可寻址单元是山区们一般为512字节。块设备无法对比扇区还小的单元进行寻址和操作。因为各种软件的用途不同，所以它们都会用到自己的最小逻辑可寻址单元–块。块是文件系统的一种抽象–只能基于块来访问文件系统。虽然物理磁盘寻址是按照扇区进行的，但是内核执行的所有磁盘操作都是按照块进行的。对块大小的最终要求是必须是扇区大小的2的整数倍，并且要小于页面的大小，所以通常块大小是512字节，1KB或者4KB。；</li>
+</ol>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line">root@kuhan-server:/home/kuhan/daos# dmg -i -l 172.20.18.168 storage scan</span><br><span class="line">Hosts         SCM Total       NVMe Total</span><br><span class="line">-----         ---------       ----------</span><br><span class="line">172.20.18.168 0 B (0 modules) 0 B (0 controllers)</span><br><span class="line">root@kuhan-server:/home/kuhan/daos# dmg -i -l 172.20.18.168 storage format</span><br><span class="line">Formatting scm storage for DAOS I/O Engine instance 0 (reformat: false)</span><br><span class="line">Instance 0: starting format of SCM (ram:/mnt/daos)</span><br><span class="line">Instance 0: finished format of SCM (ram:/mnt/daos)</span><br><span class="line">Formatting nvme storage for DAOS I/O Engine instance 0</span><br><span class="line">Instance 0: starting format of file block devices [/tmp/daos-bdev]</span><br><span class="line">Instance 0: finished format of file block devices [/tmp/daos-bdev]</span><br><span class="line">Writing nvme config file for DAOS I/O Engine instance 0</span><br><span class="line">DAOS I/O Engine instance 0 storage ready</span><br><span class="line">Format Summary:</span><br><span class="line">  Hosts         SCM Devices NVMe Devices</span><br><span class="line">  -----         ----------- ------------</span><br><span class="line">  172.20.18.168 1           1</span><br><span class="line">SCM @ /mnt/daos: 4.3 GB Total/4.3 GB Avail</span><br><span class="line">Starting I/O Engine instance 0: /home/kuhan/daos/install/bin/daos_engine</span><br><span class="line">root@kuhan-server:/home/kuhan/daos# daos_engine:0 Using legacy core allocation algorithm</span><br><span class="line">MS leader running on kuhan-server</span><br><span class="line">daos_engine:0 DAOS I/O Engine (v2.0.0) process 6930 started on rank 0 with 1 target, 0 helper XS, firstcore 0, host kuhan-server.</span><br></pre></td></tr></table></figure>
+
+
+
+<h2 id="commands"><a href="#commands" class="headerlink" title="commands"></a>commands</h2><h3 id="Storage-Operations"><a href="#Storage-Operations" class="headerlink" title="Storage Operations"></a>Storage Operations</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">dmg storage query usage</span><br></pre></td></tr></table></figure>
+
+<h3 id="NMMe-SSD-Health-Monitoring"><a href="#NMMe-SSD-Health-Monitoring" class="headerlink" title="NMMe SSD Health Monitoring"></a>NMMe SSD Health Monitoring</h3><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line">3.3  DAOS系统管理命令</span><br><span class="line">1） 存储空间占用查询</span><br><span class="line">dmg -i storage query usage</span><br><span class="line">2） 健康检查</span><br><span class="line">dmg -i storage query list-devices</span><br><span class="line">dmg -i storage query list-pools</span><br><span class="line">dmg -i storage query device-health -u 038a6076-a2e9-48ff-b4b2-1859d319c928</span><br><span class="line">dmg -i storage scan --nvme-meta</span><br><span class="line">dmg -i storage scan --nvme-health</span><br><span class="line">3） NVMe SSD Eviction and Hotplug</span><br><span class="line">dmg -i storage set nvme-faulty –uuid=</span><br><span class="line">dmg -i storage replace nvme --old-uuid= --new-uuid=</span><br><span class="line"></span><br><span class="line">4） NVMe SSD点灯</span><br><span class="line">dmg -i storage identify vmd -h --uuid=</span><br><span class="line"></span><br><span class="line">3.4  Benchmark</span><br><span class="line">1）创建pool</span><br><span class="line">dmg -i pool create --size=50GB</span><br><span class="line">dmg -i pool list</span><br><span class="line">dmg -i pool list -v</span><br><span class="line">dmg -i pool query --pool=115d5112-e4db-4364-9821-48b661cef7bc</span><br><span class="line">daos pool autotest --pool=115d5112-e4db-4364-9821-48b661cef7bc</span><br><span class="line">2）创建container</span><br><span class="line">daos cont create --pool=115d5112-e4db-4364-9821-48b661cef7bc</span><br><span class="line">Successfully created container f5d39d5d-c352-4538-8a28-54d75c76c0ac</span><br><span class="line">daos cont create --pool=115d5112-e4db-4364-9821-48b661cef7bc --path=/tmp/mycontainer --type=POSIX</span><br><span class="line">Successfully created container 529c9361-65b3-4d7a-ba1f-b306390dcdea type POSIX</span><br><span class="line">daos cont query --path /tmp/mycontainer</span><br><span class="line">3）测试</span><br><span class="line">export POOL=115d5112-e4db-4364-9821-48b661cef7bc</span><br><span class="line">export CONT=529c9361-65b3-4d7a-ba1f-b306390dcdea</span><br><span class="line">fio ./examples/dfs.fio</span><br></pre></td></tr></table></figure>
+
+<h3 id="create-pool"><a href="#create-pool" class="headerlink" title="create pool"></a>create pool</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line">root@kuhan-server:/home/kuhan/daos# dmg -i pool create --size=10GB --label=test</span><br><span class="line">Creating DAOS pool with automatic storage allocation: 10 GB total, 6,94 tier ratio</span><br><span class="line">daos_engine:0 3f085ef1: pool/cont hdl uuid 2366bb3f/a41283be</span><br><span class="line">3f085ef1: rank 0 became pool service leader 0</span><br><span class="line">Pool created with 6.00%,94.00% storage tier ratio</span><br><span class="line">-------------------------------------------------</span><br><span class="line">  UUID                 : 3f085ef1-eddb-47ed-b68f-c05cb1f7c7b7</span><br><span class="line">  Service Ranks        : 0</span><br><span class="line">  Storage Ranks        : 0</span><br><span class="line">  Total Size           : 10 GB</span><br><span class="line">  Storage tier 0 (SCM) : 600 MB (600 MB / rank)</span><br><span class="line">  Storage tier 1 (NVMe): 9.4 GB (9.4 GB / rank)</span><br><span class="line"></span><br><span class="line">root@kuhan-server:/home/kuhan/daos# dmg -i storage scan</span><br><span class="line">Hosts     SCM Total       NVMe Total</span><br><span class="line">-----     ---------       ----------</span><br><span class="line">localhost 0 B (0 modules) 0 B (0 controllers)</span><br><span class="line">root@kuhan-server:/home/kuhan/daos# daos cont create --pool=3f085ef1-eddb-47ed-b68f-c05cb1f7c7b7</span><br><span class="line">  Container UUID : a1c04e93-26e9-4453-9a59-72e1a33b7667</span><br><span class="line">  Container Type : unknown</span><br><span class="line"></span><br><span class="line">Successfully created container a1c04e93-26e9-4453-9a59-72e1a33b7667</span><br></pre></td></tr></table></figure>
+
+
+
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
     <link itemprop="mainEntityOfPage" href="http://example.com/2022/01/04/Programming-language-GO-RUST/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -1367,9 +1448,24 @@
                 <i class="far fa-calendar"></i>
               </span>
               <span class="post-meta-item-text">Posted on</span>
-              
 
-              <time title="Created: 2022-01-04 10:41:13 / Modified: 10:41:30" itemprop="dateCreated datePublished" datetime="2022-01-04T10:41:13+08:00">2022-01-04</time>
+              <time title="Created: 2022-01-04 10:41:13" itemprop="dateCreated datePublished" datetime="2022-01-04T10:41:13+08:00">2022-01-04</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2023-04-17 14:24:55" itemprop="dateModified" datetime="2023-04-17T14:24:55+08:00">2023-04-17</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Programming-language/" itemprop="url" rel="index"><span itemprop="name">Programming language</span></a>
+                </span>
             </span>
 
           
@@ -1383,8 +1479,7 @@
     <div class="post-body" itemprop="articleBody">
 
       
-          <p>[TOC]</p>
-<h2 id="Go"><a href="#Go" class="headerlink" title="Go"></a>Go</h2><ol>
+          <h2 id="Go"><a href="#Go" class="headerlink" title="Go"></a>Go</h2><ol>
 <li><p>常量</p>
 <ol>
 <li>定义格式 const Name [Type] = Value</li>
@@ -2952,9 +3047,24 @@ items[i][1] = 2
                 <i class="far fa-calendar"></i>
               </span>
               <span class="post-meta-item-text">Posted on</span>
-              
 
-              <time title="Created: 2022-01-04 10:39:58 / Modified: 10:40:34" itemprop="dateCreated datePublished" datetime="2022-01-04T10:39:58+08:00">2022-01-04</time>
+              <time title="Created: 2022-01-04 10:39:58" itemprop="dateCreated datePublished" datetime="2022-01-04T10:39:58+08:00">2022-01-04</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2023-04-17 14:26:02" itemprop="dateModified" datetime="2023-04-17T14:26:02+08:00">2023-04-17</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/knowledge/" itemprop="url" rel="index"><span itemprop="name">knowledge</span></a>
+                </span>
             </span>
 
           
@@ -2968,8 +3078,7 @@ items[i][1] = 2
     <div class="post-body" itemprop="articleBody">
 
       
-          <p>[TOC]</p>
-<h2 id="Consensus-Algorithm"><a href="#Consensus-Algorithm" class="headerlink" title="Consensus Algorithm"></a>Consensus Algorithm</h2><p>满足三个条件：</p>
+          <h1 id="Distributed-protocol"><a href="#Distributed-protocol" class="headerlink" title="Distributed protocol"></a>Distributed protocol</h1><h2 id="Consensus-Algorithm"><a href="#Consensus-Algorithm" class="headerlink" title="Consensus Algorithm"></a>Consensus Algorithm</h2><p>满足三个条件：</p>
 <p>non-triviality:if the value v is decided,then v must have been proposed by a proposer</p>
 <p>safety &amp; safe learning:任意两个proposr，得知decided value is a andf b,必有a=b</p>
 <h3 id="classic-paxos"><a href="#classic-paxos" class="headerlink" title="classic paxos"></a>classic paxos</h3><p>two phase：</p>
@@ -3295,9 +3404,24 @@ items[i][1] = 2
                 <i class="far fa-calendar"></i>
               </span>
               <span class="post-meta-item-text">Posted on</span>
-              
 
-              <time title="Created: 2022-01-04 10:38:20 / Modified: 10:39:29" itemprop="dateCreated datePublished" datetime="2022-01-04T10:38:20+08:00">2022-01-04</time>
+              <time title="Created: 2022-01-04 10:38:20" itemprop="dateCreated datePublished" datetime="2022-01-04T10:38:20+08:00">2022-01-04</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2023-04-17 14:23:02" itemprop="dateModified" datetime="2023-04-17T14:23:02+08:00">2023-04-17</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/knowledge/" itemprop="url" rel="index"><span itemprop="name">knowledge</span></a>
+                </span>
             </span>
 
           
@@ -3311,8 +3435,7 @@ items[i][1] = 2
     <div class="post-body" itemprop="articleBody">
 
       
-          <p>[TOC]</p>
-<h2 id="RAID的分类："><a href="#RAID的分类：" class="headerlink" title="RAID的分类："></a>RAID的分类：</h2><ol>
+          <h2 id="RAID的分类："><a href="#RAID的分类：" class="headerlink" title="RAID的分类："></a>RAID的分类：</h2><ol>
 <li>参考：<a target="_blank" rel="noopener" href="https://www.zhihu.com/question/20131784">https://www.zhihu.com/question/20131784</a></li>
 </ol>
 <h2 id="HDD"><a href="#HDD" class="headerlink" title="HDD"></a>HDD</h2><ol>
@@ -3717,9 +3840,24 @@ items[i][1] = 2
                 <i class="far fa-calendar"></i>
               </span>
               <span class="post-meta-item-text">Posted on</span>
-              
 
-              <time title="Created: 2021-12-31 11:28:41 / Modified: 11:29:26" itemprop="dateCreated datePublished" datetime="2021-12-31T11:28:41+08:00">2021-12-31</time>
+              <time title="Created: 2021-12-31 11:28:41" itemprop="dateCreated datePublished" datetime="2021-12-31T11:28:41+08:00">2021-12-31</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2023-04-17 14:24:04" itemprop="dateModified" datetime="2023-04-17T14:24:04+08:00">2023-04-17</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Programming-language/" itemprop="url" rel="index"><span itemprop="name">Programming language</span></a>
+                </span>
             </span>
 
           
@@ -3781,142 +3919,6 @@ items[i][1] = 2
 
 
 <h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a target="_blank" rel="noopener" href="https://www.baeldung.com/linux/solve-shared-object-error">https://www.baeldung.com/linux/solve-shared-object-error</a></p>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
-    <link itemprop="mainEntityOfPage" href="http://example.com/2021/12/30/How-to-debug-daos-engine-via-vscode-md/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="Javie Chen">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Saturn">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2021/12/30/How-to-debug-daos-engine-via-vscode-md/" class="post-title-link" itemprop="url">How_to_debug_daos_engine_via_vscode.md</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-              
-
-              <time title="Created: 2021-12-30 13:40:26 / Modified: 13:40:56" itemprop="dateCreated datePublished" datetime="2021-12-30T13:40:26+08:00">2021-12-30</time>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <p>[TOC]</p>
-<h1 id="背景："><a href="#背景：" class="headerlink" title="背景："></a>背景：</h1><p>daos代码干读的话不是很好理解，如果能单步跟踪，那么对于理解daos的控制流程和数据读写是比较有利的。</p>
-<h1 id="工具"><a href="#工具" class="headerlink" title="工具"></a>工具</h1><ul>
-<li>vscode</li>
-<li>一台虚拟机</li>
-</ul>
-<h1 id="操作步骤"><a href="#操作步骤" class="headerlink" title="操作步骤"></a>操作步骤</h1><h2 id="在虚拟机中编译daos-code"><a href="#在虚拟机中编译daos-code" class="headerlink" title="在虚拟机中编译daos code"></a>在虚拟机中编译daos code</h2><p>此步骤省略，参见官网的文档。</p>
-<h2 id="在虚拟机中启动Daos"><a href="#在虚拟机中启动Daos" class="headerlink" title="在虚拟机中启动Daos"></a>在虚拟机中启动Daos</h2><p>此步骤省略，参见官网文档：</p>
-<ol>
-<li>启动daos_server</li>
-<li>启动daos_engine</li>
-<li>启动daos_agent</li>
-</ol>
-<h2 id="配置local和remote的ssh免密连接"><a href="#配置local和remote的ssh免密连接" class="headerlink" title="配置local和remote的ssh免密连接"></a>配置local和remote的ssh免密连接</h2><ol>
-<li><p>ssh-copy-id <a href="mailto:&#x72;&#x6f;&#111;&#116;&#64;&#49;&#55;&#50;&#x2e;&#x31;&#56;&#x2e;&#50;&#48;&#46;&#49;&#49;">&#x72;&#x6f;&#111;&#116;&#64;&#49;&#55;&#50;&#x2e;&#x31;&#56;&#x2e;&#50;&#48;&#46;&#49;&#49;</a></p>
-<ul>
-<li>输入remote虚拟机root账户的密码</li>
-</ul>
-</li>
-<li><p>配置VSCode和虚拟机的连接：</p>
-<p>vscode支持三种模式的remote debug：</p>
-<ul>
-<li>Docker</li>
-<li>WSL</li>
-<li>SSH</li>
-</ul>
-<p>这里我们把Daos相关进程启动在了物理机（虚机）上，因此我们选择第三种SSH模式。</p>
-<ol>
-<li><p>点击VSCode边栏“远程资源管理”<img src="https://tva1.sinaimg.cn/large/008i3skNgy1gxvp3k38l6j301200x0kd.jpg" alt="image-20211230112046773"></p>
-</li>
-<li><p>点击加号<img src="https://tva1.sinaimg.cn/large/008i3skNgy1gxvp4g3s2ij307000pmwx.jpg" alt="image-20211230112516147"></p>
-</li>
-<li><p>在跳转出来的textbox中输入ssh的连接指令：</p>
-<p><code>ssh root@1123.1212.2121.121</code></p>
-</li>
-<li><p>配置成功</p>
-</li>
-</ol>
-</li>
-</ol>
-<h2 id="Attach-code-base目录："><a href="#Attach-code-base目录：" class="headerlink" title="Attach code base目录："></a>Attach code base目录：</h2><ol>
-<li>点击文件夹+<img src="https://tva1.sinaimg.cn/large/008i3skNgy1gxvp8s9vltj307801wgli.jpg" alt="image-20211230112927129"></li>
-<li>选择目标代码目录</li>
-</ol>
-<h2 id="安装remote-C-C-扩展"><a href="#安装remote-C-C-扩展" class="headerlink" title="安装remote C/C++扩展"></a>安装remote C/C++扩展</h2><p><img src="https://tva1.sinaimg.cn/large/008i3skNgy1gxvsihwmztj306v03hweh.jpg" alt="image-20211230132234853"></p>
-<h2 id="配置Debug-config"><a href="#配置Debug-config" class="headerlink" title="配置Debug config"></a>配置Debug config</h2><ol>
-<li><p>点击VScode边栏“运行和调试”</p>
-</li>
-<li><p>点击<img src="https://tva1.sinaimg.cn/large/008i3skNgy1gxvsjvwgmpj307000t0si.jpg" alt="image-20211230132355728"></p>
-</li>
-<li><p>添加配置<img src="https://tva1.sinaimg.cn/large/008i3skNgy1gxvskbljawj304301iq2q.jpg" alt="image-20211230132424770"></p>
-</li>
-<li><p>点击<img src="https://tva1.sinaimg.cn/large/008i3skNgy1gxvsl3mi8cj307600uq2q.jpg" alt="image-20211230132505233"></p>
-</li>
-<li><p>在<code>launch.json</code>中写入以下配置：</p>
-<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line">&#123;</span><br><span class="line">    <span class="attr">&quot;configurations&quot;</span>: [</span><br><span class="line">        &#123;</span><br><span class="line">            <span class="attr">&quot;name&quot;</span>: <span class="string">&quot;(gdb) 附加&quot;</span>,</span><br><span class="line">            <span class="attr">&quot;type&quot;</span>: <span class="string">&quot;cppdbg&quot;</span>,</span><br><span class="line">            <span class="attr">&quot;request&quot;</span>: <span class="string">&quot;attach&quot;</span>,</span><br><span class="line">            <span class="attr">&quot;program&quot;</span>: <span class="string">&quot;/home/kuhan/daos/install/bin/daos_engine&quot;</span>,</span><br><span class="line">            <span class="attr">&quot;processId&quot;</span>: <span class="string">&quot;$&#123;command:pickProcess&#125;&quot;</span>,</span><br><span class="line">            <span class="attr">&quot;MIMode&quot;</span>: <span class="string">&quot;gdb&quot;</span>,</span><br><span class="line">            <span class="attr">&quot;setupCommands&quot;</span>: [</span><br><span class="line">                &#123;</span><br><span class="line">                    <span class="attr">&quot;description&quot;</span>: <span class="string">&quot;为 gdb 启用整齐打印&quot;</span>,</span><br><span class="line">                    <span class="attr">&quot;text&quot;</span>: <span class="string">&quot;-enable-pretty-printing&quot;</span>,</span><br><span class="line">                    <span class="attr">&quot;ignoreFailures&quot;</span>: <span class="literal">true</span></span><br><span class="line">                &#125;</span><br><span class="line">            ]</span><br><span class="line">        &#125;</span><br><span class="line">        </span><br><span class="line"></span><br><span class="line">    ]</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></li>
-<li><p>按F5或者点击“开始调试”，debugger会尝试attach到daos_engine上。</p>
-</li>
-<li><p>在本地shell中<code>ssh root@123.123.123.123</code>登入到远程，查看daos相关进程<code>ps -ef | grep daos</code>:</p>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">root@kuhan-server:/home/kuhan/daos/src/tests# ps -efww |grep daos</span><br><span class="line">root       13401   10440  0 Dec29 pts/1    00:01:07 daos_server -o daos_server.yml start</span><br><span class="line">root       14457   13401 99 Dec29 pts/1    19:05:20 /home/kuhan/daos/install/bin/daos_engine -t 1 -x 0 -g daos_server -d /var/run/daos_server -T 2 -n /mnt/daos/daos_nvme.conf -I 0 -r 8192 -H 2 -s /mnt/daos</span><br><span class="line">root       14470   10440  0 Dec29 pts/1    00:00:02 daos_agent -i start</span><br><span class="line">root       31974   10440  0 03:12 pts/1    00:00:00 grep --color=auto daos</span><br></pre></td></tr></table></figure></li>
-<li><p>可知daos_engine的进程号为14457</p>
-</li>
-<li><p>在VScode中填入对应的进程号：</p>
-<p><img src="https://tva1.sinaimg.cn/large/008i3skNgy1gxvsuw29e6j30gw031aa6.jpg" alt="image-20211230133433545"></p>
-</li>
-<li><p>出现以下画面表示attach成功</p>
-<p><img src="https://tva1.sinaimg.cn/large/008i3skNgy1gxvsvvtzmfj306y06at8r.jpg" alt="image-20211230133530702"></p>
-</li>
-</ol>
-<h1 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h1><ol>
-<li><a target="_blank" rel="noopener" href="https://lightrun.com/debugging/how-to-debug-remotely-in-vs-code/">https://lightrun.com/debugging/how-to-debug-remotely-in-vs-code/</a></li>
-<li><a target="_blank" rel="noopener" href="https://code.visualstudio.com/docs/editor/debugging#_launch-configurations">https://code.visualstudio.com/docs/editor/debugging#_launch-configurations</a></li>
-<li><a target="_blank" rel="noopener" href="https://code.visualstudio.com/docs/editor/debugging">https://code.visualstudio.com/docs/editor/debugging</a></li>
-</ol>
-<h1 id="More"><a href="#More" class="headerlink" title="More"></a>More</h1><ol>
-<li>how to debug daos_server: TBD</li>
-<li>how to debug daos_agent: TBD</li>
-</ol>
 
       
     </div>
@@ -3998,9 +4000,21 @@ items[i][1] = 2
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">10</span>
+          <span class="site-state-item-count">9</span>
           <span class="site-state-item-name">posts</span>
         </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">2</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">9</span>
+        <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
 </div>
